@@ -14,8 +14,8 @@ val Typography = Typography(
         fontSize = 16.sp
     ),
     h1 = TextStyle(
-        fontSize = 40.sp,
-        fontWeight = FontWeight.Bold,
+        fontSize = 50.sp,
+        fontWeight = FontWeight.ExtraBold,
         color = ColorPalette.primaryText
     ),
     h2 = TextStyle(fontSize = 24.sp,
@@ -26,6 +26,10 @@ val Typography = Typography(
         fontWeight = FontWeight.Bold,
         color = ColorPalette.primaryText
     ),
+
+    h4 = TextStyle(fontWeight = FontWeight.Normal , fontSize = 12.sp, color = ColorPalette.primaryText.copy(alpha = 0.5f)),
+
+    h5 = TextStyle(fontWeight = FontWeight.Normal , fontSize = 10.sp),
 
     button = TextStyle(
         fontFamily = FontFamily.Default,

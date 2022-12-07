@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">WorkoutCompanion</string>
+    <string name="ProgressiveOverloadAssistant">Progressive Overload Assistant</string>
+    <string name="WorkoutLogger">Workout Logger</string>
+    <string name="WorkoutBuilder">Workout Builder</string>
+    <string name="BackedByScience">Backed By Science</string>
+    <string name="Body_ProgressiveOverloadAssistant">Your Weights will be increased from workout to workout based on your feedback</string>
+    <string name="Body_WorkoutLogger">All your workouts will be saved and you will be able to see all your hard work in the gym</string>
+    <string name="Body_WorkoutBuilder">Create efficient workout routines tailored to your needs and preferences in a couple of minutes</string>
+    <string name="Body_BackedByScience">All the exercises are well researched with factual information to help you decide what works best for you</string>
+
 </resources>
