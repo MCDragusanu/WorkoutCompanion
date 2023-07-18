@@ -1,0 +1,70 @@
+<resources>
+    <string name="app_name">WorkoutCompanion</string>
+    <string name="workout_tracking_title">Comprehensive Workout Tracking</string>
+    <string name="workout_tracking_caption">Track all your workouts, from cardio sessions to weightlifting routines, ensuring no progress goes unnoticed.</string>
+    <string name="progressive_overload_title">Assisted Progressive Overload</string>
+    <string name="progressive_overload_caption">Calculates and manages your target weights and reps for each exercise, eliminating the need for tedious mental math during your workouts</string>
+    <string name="exercise_database_title"> Detailed exercise database</string>
+    <string name="exercise_database_caption">Each exercise is accompanied by detailed step-by-step instructions, ensuring proper form and technique</string>
+    <string name="workout_designer_title">Automated Workout Design</string>
+    <string name="workout_designer_caption">Create custom workout Plans that fit your goals and needs in a few minutes</string>
+    <string name="login_unknown_error">An error has occurred while logging in</string>
+    <string name="login_invalid_email">The email provided does not have a valid format</string>
+    <string name="login_empty_email">Please enter your email</string>
+    <string name="login_empty_password">Please enter your password</string>
+    <string name="login_account_not_found">There is no account linked to this email</string>
+    <string name="login_credentials_invalid">The credentials you provided are incorrect </string>
+    <string name="registration_account_collision">There is another account linked to this email</string>
+    <string name="registration_empty_email">Please enter an email</string>
+    <string name="registration_unknown_error">Unknown Error has occurred wile creating your account</string>
+    <string name="registration_password_too_weak">Password is too weak, use at least 10 characters including digits</string>
+    <string name="registration_empty_password">Please enter a password</string>
+    <string name="registration_invalid_email">Please enter a valid email</string>
+    <string name="error_empty_email">Please enter an email</string>
+    <string name="error_invalid_email">Please enter a valid email!</string>
+    <string name="password_properties_contains_letters">Must contain at least 1 letter</string>
+    <string name="password_properties_is_long_enough">Must contains at least 10 characters</string>
+    <string name="password_properties_contains_digits">Must contain at least 1 digit</string>
+    <string name="password_properties_contains_upper_case">Must contains at least 1 Upper Case letter (ex : A,B,C)</string>
+    <string name="password_properties_contains_special_characters">Contains special characters (ex: @ ,#,!)</string>
+
+    <!-- Privacy Policy -->
+    <string name="privacy_policy_title">Privacy Policy</string>
+    <string name="privacy_policy_description">Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your personal information when you use our fitness app. By using our app, you consent to the practices described in this policy.</string>
+
+    <!-- Information We Collect -->
+    <string name="info_collect_title">Information We Collect</string>
+    <string name="workout_info">Workout Information:</string>
+    <string name="workout_info_description">When you use our app\'s workout tracking feature, we collect information about your workout sessions, including exercise types, sets, reps, and weights used. This information is solely used to provide you with personalized workout tracking and progress analysis.</string>
+    <string name="user_preferences">User Preferences:</string>
+    <string name="user_preferences_description">We may collect information about your exercise preferences, such as preferred workout duration, goals, and fitness level. This information helps us tailor the app\'s features to your needs and provide you with relevant recommendations.</string>
+    <string name="basic_user_info">Basic User Information:</string>
+    <string name="basic_user_info_description">During the account creation process, we collect certain basic information about you, including your first name, last name, date of birth, and email address. This information is used to personalize your app experience and communicate with you regarding your account and app-related updates.</string>
+
+    <!-- Use of Information -->
+    <string name="use_info_title">Use of Information</string>
+    <string name="app_functionality">App Functionality:</string>
+    <string name="app_functionality_description">We use the collected information to provide and improve our app\'s functionality, including workout tracking, progressive overload features, and personalized recommendations. The workout information is used to generate workout statistics and progress reports for your personal use.</string>
+    <string name="communication">Communication:</string>
+    <string name="communication_description">We may use your email address to send you notifications, updates, and relevant information about our app. You have the option to opt out of receiving promotional materials at any time.</string>
+
+    <!-- Data Storage and Security -->
+    <string name="data_storage_title">Data Storage and Security</string>
+    <string name="firestore_db">Firestore Cloud Database:</string>
+    <string name="firestore_db_description">The user information and workout data are securely stored in a cloud database provided by Firestore. We take reasonable measures to protect your data from unauthorized access, alteration, or disclosure.</string>
+    <string name="third_party">Third-Party Service Providers:</string>
+    <string name="third_party_description">We do not share your personal information with third parties for marketing purposes. However, we may engage third-party service providers who assist us in operating our app, including hosting and data storage. These service providers are contractually obligated to maintain the confidentiality and security of your information.</string>
+
+    <!-- Data Retention -->
+    <string name="data_retention_title">Data Retention</string>
+    <string name="data_retention_description">We retain your personal information, including workout data, for as long as necessary to provide you with the app\'s functionality and fulfill the purposes outlined in this Privacy Policy. If you choose to delete your account, your personal information will be securely and permanently removed from our systems.</string>
+
+    <!-- Children's Privacy -->
+    <string name="children_privacy_title">Children\'s Privacy</string>
+    <string name="children_privacy_description">Our app is not intended for use by children under the age of 13. We do not knowingly collect personal information from children. If you believe we have inadvertently collected information from a child, please contact us immediately.</string>
+
+    <!-- Updates to Privacy Policy -->
+    <string name="updates_title">Updates to Privacy Policy</string>
+    <string name="updates_description">We may update this Privacy Policy from time to time to reflect changes in our practices or to comply with legal requirements. We will notify you of any material changes by providing a prominent notice within the app or through other communication channels. Your continued use of the app after the changes will signify your acceptance of the updated policy.</string>
+    <string name="error_no_internet_connection">You must have an active network conenction in order to continue</string>
+</resources>

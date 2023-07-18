@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.WorkoutCompanion" parent="android:Theme.DeviceDefault.NoActionBar.TranslucentDecor">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+    <style name="Theme.DialogFullScreen" parent="android:Theme.Material.Dialog.Alert">
+        <item name="android:windowMinWidthMajor">100%</item>
+        <item name="android:windowMinWidthMinor">100%</item>
+    </style>
+</resources>
