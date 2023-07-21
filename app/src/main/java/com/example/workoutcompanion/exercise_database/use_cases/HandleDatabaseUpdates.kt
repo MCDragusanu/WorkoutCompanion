@@ -38,9 +38,12 @@ class HandleDatabaseUpdates {
 
             //checking if it has an old version cached
             if (localVersion.versionNumber != cloudVersion.versionNumber) {
+
+                //clearing outdated database
                 versionRepository.deleteVersion(localVersion)
-                versionRepository.saveNewVersion(cloudVersion)
                 exerciseRepository.deleteAllExercises()
+
+                versionRepository.saveNewVersion(cloudVersion)
                 cacheCloudDatabase(exerciseRepository, cloudExerciseDataSource)
                 Log.d("Test", "Latest version has been cached")
                 onSuccess()
@@ -48,7 +51,7 @@ class HandleDatabaseUpdates {
             }
 
             if (localVersion.versionNumber == cloudVersion.versionNumber) {
-                Log.d("Test", "Latest version cached")
+                Log.d("Test", "Database is Up-To-Date")
                 onSuccess()
                 return
             }

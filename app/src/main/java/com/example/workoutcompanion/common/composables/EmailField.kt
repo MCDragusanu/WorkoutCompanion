@@ -15,6 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import com.example.compose.WorkoutCompanionColors
 import com.example.workoutcompanion.common.FormState
 import com.example.workoutcompanion.on_board.composables.FormField
 import kotlinx.coroutines.flow.Flow
@@ -38,14 +39,14 @@ fun EmailField(modifier: Modifier,
                     Icon(
                         imageVector = Icons.Filled.CheckCircle,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.secondary
+                        tint = WorkoutCompanionColors(materialTheme = MaterialTheme.colorScheme).successColor
                     )
                 }
                 AnimatedVisibility(visible = currentState.state.isError()) {
                     Icon(
                         imageVector = Icons.Filled.Warning,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onError
+                        tint = MaterialTheme.colorScheme.error
                     )
                 }
             },

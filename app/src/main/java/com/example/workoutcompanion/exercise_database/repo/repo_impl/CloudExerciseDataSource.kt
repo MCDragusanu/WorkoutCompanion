@@ -12,10 +12,10 @@ import javax.inject.Inject
 
 
 class CloudExerciseDataSource @Inject constructor(private val repo:FirebaseRepository<ExerciseDocument>): ExerciseDataSource {
-    override suspend fun getAllExercises() : Flow<List<Exercise>> = flow {
+    override suspend fun getAllExercises() : Flow<List<ExerciseDocument>> = flow {
         val container = mutableListOf<ExerciseDocument>()
         val result = repo.getAllDocuments(ExerciseDocument::class.java).toList(container)
-        emit(result.onEach { Log.d("Test" , it.exerciseName) }.map { it.toExercise() })
+        emit(result.onEach { Log.d("Test" , it.exerciseName) })
     }
 
 }

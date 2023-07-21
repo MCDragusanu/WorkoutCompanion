@@ -1,5 +1,7 @@
 package com.example.compose
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
 
 import androidx.compose.ui.graphics.Color
@@ -121,6 +123,16 @@ data class WorkoutCompanionColors(val materialTheme: ColorScheme,
 }
 
  val LightColorPalette = staticCompositionLocalOf {
-     WorkoutCompanionColors(materialTheme = LightColors)
+     WorkoutCompanionColors(
+         materialTheme = LightColors ,
+         successColor = Color(0xFF3CDB38) ,
+         successContainer = Color(0xFF6DDB6F),
+         onSuccessContainer = Color(0xFF09420A)
+     )
  }
- val DarkColorPalette = staticCompositionLocalOf{ WorkoutCompanionColors(materialTheme = DarkColors) }
+ val DarkColorPalette = staticCompositionLocalOf{ WorkoutCompanionColors(materialTheme = DarkColors ,successColor = Color(0xFF3CDB38) ,
+     successContainer = Color(0xFF6DDB6F),
+     onSuccessContainer = Color(0xFF09420A)) }
+
+@Composable
+fun getPalette() = if(isSystemInDarkTheme()) DarkColorPalette else LightColorPalette

@@ -23,8 +23,8 @@ class LocalExerciseRepositoryImpl @Inject constructor(private val dao: ExerciseD
             dao.deleteExercise(exerciseDocument)
     }
 
-    override suspend fun getAllExercises(): Flow<List<Exercise>> = flow {
-           emit(dao.getExercises().map { it.toExercise() })
+    override suspend fun getAllExercises(): Flow<List<ExerciseDocument>> = flow {
+           emit(dao.getExercises())
     }
 
     override suspend fun deleteAllExercises() {

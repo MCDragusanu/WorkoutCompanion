@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import com.example.compose.WorkoutCompanionColors
 import com.example.workoutcompanion.common.FormState
 import com.example.workoutcompanion.on_board.composables.FormField
 import kotlinx.coroutines.flow.Flow
@@ -41,7 +42,7 @@ import kotlinx.coroutines.flow.onEach
                     Icon(
                         imageVector = Icons.Filled.CheckCircle,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.secondary
+                        tint = WorkoutCompanionColors(materialTheme = MaterialTheme.colorScheme).successColor
                     )
                 }
 //                AnimatedVisibility(visible = currentState.state.isError()) {
