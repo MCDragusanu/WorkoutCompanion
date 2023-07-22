@@ -1,47 +1,42 @@
 package com.example.workoutcompanion.entry_navigation.on_board.view_model
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.workoutcompanion.R
-import com.example.workoutcompanion.common.FormState
+import com.example.workoutcompanion.common.composables.FormState
 import com.example.workoutcompanion.common.NetworkObserver
-import com.example.workoutcompanion.common.UIState
+import com.example.workoutcompanion.common.composables.UIState
 import com.example.workoutcompanion.common.use_cases.email.EmailProperties
 import com.example.workoutcompanion.common.use_cases.email.ValidateEmail
 import com.example.workoutcompanion.common.use_cases.password.PasswordProperties
 import com.example.workoutcompanion.common.use_cases.password.ValidatePassword
-import com.example.workoutcompanion.exercise_database.module.CloudDatabaseModule
-import com.example.workoutcompanion.exercise_database.module.LocalDatabaseModule
-import com.example.workoutcompanion.exercise_database.repo.ExerciseDataSource
-import com.example.workoutcompanion.exercise_database.repo.ExerciseRepository
-import com.example.workoutcompanion.exercise_database.use_cases.HandleDatabaseUpdates
-import com.example.workoutcompanion.exercise_database.version_control.repo.DatabaseVersionDataSource
-import com.example.workoutcompanion.exercise_database.version_control.repo.DatabaseVersionRepository
-import com.example.workoutcompanion.entry_navigation.login.auth_service.AuthManager
-import com.example.workoutcompanion.entry_navigation.login.module.AuthModule
+
+import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseRepositoryImpl
+
+import com.example.workoutcompanion.core.data.user_database.common.UserProfile
+import com.example.workoutcompanion.core.data.user_database.common.ProfileRepositoryImpl
+import com.example.workoutcompanion.core.data.auth_service.AuthManager
+import com.example.workoutcompanion.core.data.di.Production
+import com.example.workoutcompanion.core.data.di.Testing
+import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.util.Date
 import javax.inject.Inject
-import javax.inject.Named
 
 @HiltViewModel
 class OnBoardViewModel @Inject constructor(
-    private val versionRepository : DatabaseVersionRepository ,
+    @Testing()
+    private val repository : ExerciseRepository ,
 
-    @Named(CloudDatabaseModule.cloudDatabaseVersionDataSource)
-    private val cloudVersionDataSource : DatabaseVersionDataSource ,
+    @Testing()
+    private val authManager : AuthManager ,
 
-    private val exerciseRepository : ExerciseRepository ,
+    @Testing()
+    private val userRepo : ProfileRepositoryImpl ,
 
-    @Named(CloudDatabaseModule.cloudExerciseDataSource)
-    private val cloudExerciseDataSource : ExerciseDataSource ,
-
-    @Named(LocalDatabaseModule.localDatabaseVersionDataSource)
-    private val localVersionDataSource : DatabaseVersionDataSource ,
-
-    @Named(AuthModule.testImpl) private val authManager : AuthManager ,
 
     private val networkObserver : NetworkObserver) : ViewModel() {
 
@@ -50,6 +45,12 @@ class OnBoardViewModel @Inject constructor(
 
     private val _emailFormState = MutableStateFlow(FormState())
     val emailFormState = _emailFormState.asStateFlow()
+
+    private val _firstNameFormState = MutableStateFlow(FormState())
+    val firstNameFormState =_firstNameFormState.asStateFlow()
+
+    private val _lastNameFormState = MutableStateFlow(FormState())
+    val lastNameFormState = _lastNameFormState.asStateFlow()
 
     private val _passwordFormState = MutableStateFlow(FormState())
     val passwordFormState = _passwordFormState.asStateFlow()
@@ -226,21 +227,38 @@ class OnBoardViewModel @Inject constructor(
                     onSuccess = { uid ->
                         putUiInCompletedState()
                         saveUserInfo(uid)
-
                         cacheExerciseDatabase(onComplete = { navigateToNextScreen() })
 
-                        this.cancel()
+
                     }
                 )
             }
         }
     }
 
-    private fun saveUserInfo(uid:String){
-        _userInformation["userUid"] = uid
-        _userInformation["providerId"] = "email"
-        _userInformation["dateCreated"] = Date().toString()
-        _userInformation["email"] = _emailFormState.value.text
+    private fun saveUserInfo(uid:String) {
+
+        viewModelScope.launch(Dispatchers.IO) {
+            _userInformation["userUid"] = uid
+            _userInformation["providerId"] = "email"
+            _userInformation["dateCreated"] = Date().toString()
+            _userInformation["email"] = _emailFormState.value.text
+            _userInformation["firstName"] = _firstNameFormState.value.text
+            _userInformation["lastName"] = _lastNameFormState.value.text
+            val profile = UserProfile(
+                uid = uid ,
+                email = _emailFormState.value.text ,
+                providerId = "EMAIL" ,
+                firstName = _firstNameFormState.value.text ,
+                lastName = _firstNameFormState.value.text ,
+                isEmailVerified = false ,
+            )
+           val result =  userRepo.addProfile(userProfile = profile)
+            if(result.isFailure){
+                Log.d("Test" , (result.exceptionOrNull()?:Exception("Unknown Error")).stackTraceToString())
+            }
+
+        }
     }
     private suspend fun navigateToNextScreen(email:String = _userInformation["email"]?:"DEFAULT_EMAIL"){
 
@@ -265,32 +283,24 @@ class OnBoardViewModel @Inject constructor(
                 state = UIState.Loading
             )
         }
+        _firstNameFormState.update {
+            it.copy(
+                errorStringResource = null,
+                state = UIState.Loading
+            )
+        }
+        _lastNameFormState.update {
+            it.copy(
+                errorStringResource = null,
+                state = UIState.Loading
+            )
+        }
         _ctaState.update {
             UIState.Loading
         }
     }
 
-    private fun putUiInEnabledState() {
-        viewModelScope.launch(Dispatchers.Main){
-            _emailFormState.update {
-                it.copy(
-                    errorStringResource = null ,
-                    state = UIState.Enabled
-                )
-            }
-            _errorFlow.emit(null)
-            _termsState.update { UIState.Enabled }
-            _passwordFormState.update {
-                it.copy(
-                    errorStringResource = null ,
-                    state = UIState.Enabled
-                )
-            }
-            _ctaState.update {
-                UIState.Enabled
-            }
-        }
-    }
+
 
     private fun putUiInCompletedState() {
         _emailFormState.update {
@@ -343,6 +353,16 @@ class OnBoardViewModel @Inject constructor(
             return false
         }
 
+        if(_firstNameFormState.value.text.isBlank()){
+            _firstNameFormState.update { it.copy(errorStringResource = R.string.error_empty_field) }
+            return false
+        }
+
+        if(_lastNameFormState.value.text.isBlank()){
+            _lastNameFormState.update { it.copy(errorStringResource = R.string.error_empty_field) }
+            return false
+        }
+
         val emailState = ValidateEmail().execute(_emailFormState.value.text)
 
         when (emailState) {
@@ -373,32 +393,37 @@ class OnBoardViewModel @Inject constructor(
     }
 
    private fun cacheExerciseDatabase(onComplete :suspend (String) -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try{
-                //retrieve latest database version from cloud
-               HandleDatabaseUpdates().execute(
-                   exerciseRepository = exerciseRepository,
-                   versionRepository = versionRepository,
-                   localVersionDataSource = localVersionDataSource,
-                   cloudExerciseDataSource = cloudExerciseDataSource,
-                   cloudVersionDataSource = cloudVersionDataSource,
-                   onError = {
-                       it.printStackTrace()
-                   },
-                   onSuccess = {
-                       viewModelScope.launch(Dispatchers.Main){
-                           onComplete(getUserUid())
-                       }
+       viewModelScope.launch(Dispatchers.IO) {
+           try {
+               //retrieve latest database version from cloud
+               val result = repository.onUpdateLocalDatabase()
+
+               if (result.isSuccess) {
+                   withContext(Dispatchers.Main){
+                       onComplete(getUserUid())
                    }
-               )
-            }catch (e:Exception){
-                e.printStackTrace()
-            }
-        }
-    }
+
+               } else {
+                   (result.exceptionOrNull() ?: Exception("Unknown Exception")).printStackTrace()
+               }
+           } catch (e : Exception) {
+               e.printStackTrace()
+           }
+       }
+   }
    
 
     fun getUserEmail() : String {
         return _userInformation["email"]?:"DEFAULT_EMAIL"
     }
+
+    fun onFirstNameChanged(string : String ) {
+        _firstNameFormState.update { it.copy(text = string) }
+    }
+
+    fun onLastNameChanged(string : String) {
+        _lastNameFormState.update { it.copy(text = string) }
+    }
+
+
 }

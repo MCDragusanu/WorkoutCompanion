@@ -16,14 +16,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import com.example.compose.WorkoutCompanionColors
-import com.example.workoutcompanion.common.FormState
 import com.example.workoutcompanion.on_board.composables.FormField
 import kotlinx.coroutines.flow.Flow
 
 @Composable
-fun EmailField(modifier: Modifier,
-               formState: Flow<FormState>,
-               onValueChange:(String)->Unit, ) {
+fun EmailField(modifier: Modifier ,
+               formState: Flow<FormState> ,
+               onValueChange:(String)->Unit , ) {
     FormField(modifier = modifier, withErrorMessage = true, formStateFlow = formState) { flow , _modifier->
         val currentState by flow.collectAsState(initial = FormState())
         OutlinedTextField(

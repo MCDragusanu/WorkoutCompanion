@@ -15,14 +15,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import com.example.compose.getPalette
-import com.example.workoutcompanion.common.UIState
 import kotlinx.coroutines.flow.Flow
 
 @Composable
 fun AnimatedStatefulCallToAction(ctaState: Flow<UIState> ,
                                  modifier : Modifier ,
                                  action:()->Unit ,
-                                 enabled:Boolean = true,
+                                 enabled:Boolean = true ,
                                  content:@Composable()(UIState , containerColor: Color , contentColor:Color)->Unit ,
 
                                  ) {

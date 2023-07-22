@@ -67,4 +67,5 @@
     <string name="updates_title">Updates to Privacy Policy</string>
     <string name="updates_description">We may update this Privacy Policy from time to time to reflect changes in our practices or to comply with legal requirements. We will notify you of any material changes by providing a prominent notice within the app or through other communication channels. Your continued use of the app after the changes will signify your acceptance of the updated policy.</string>
     <string name="error_no_internet_connection">You must have an active network conenction in order to continue</string>
+    <string name="error_empty_field">This field is obligatory</string>
 </resources>

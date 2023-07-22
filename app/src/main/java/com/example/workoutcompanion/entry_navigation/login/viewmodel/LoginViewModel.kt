@@ -5,23 +5,24 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.workoutcompanion.R
-import com.example.workoutcompanion.common.FormState
+import com.example.workoutcompanion.common.composables.FormState
 import com.example.workoutcompanion.common.NetworkObserver
-import com.example.workoutcompanion.common.UIState
+import com.example.workoutcompanion.common.composables.UIState
 import com.example.workoutcompanion.common.use_cases.email.EmailProperties
 import com.example.workoutcompanion.common.use_cases.email.ValidateEmail
-import com.example.workoutcompanion.entry_navigation.login.auth_service.AuthManager
-import com.example.workoutcompanion.entry_navigation.login.module.AuthModule
+import com.example.workoutcompanion.core.data.di.Testing
+import com.example.workoutcompanion.core.data.auth_service.AuthManager
+import com.example.workoutcompanion.core.data.di.Production
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import javax.inject.Inject
-import javax.inject.Named
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    @Named(AuthModule.testImpl)
-    private val auth : AuthManager , private val networkObserver: NetworkObserver
+    @Testing
+    private val auth : AuthManager ,
+    private val networkObserver: NetworkObserver
                                          ):ViewModel() {
 
 

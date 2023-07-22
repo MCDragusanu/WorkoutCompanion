@@ -27,8 +27,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.workoutcompanion.R
-import com.example.workoutcompanion.common.FormState
-import com.example.workoutcompanion.common.UIState
+import com.example.workoutcompanion.common.composables.FormState
+import com.example.workoutcompanion.common.composables.UIState
 import com.example.workoutcompanion.common.composables.AnimatedStatefulCallToAction
 import com.example.workoutcompanion.common.composables.EmailField
 import com.example.workoutcompanion.common.composables.SimplePasswordField

@@ -15,15 +15,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import com.example.compose.WorkoutCompanionColors
-import com.example.workoutcompanion.common.FormState
 import com.example.workoutcompanion.on_board.composables.FormField
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onEach
 
-@Composable fun SimplePasswordField(modifier: Modifier,
-                              formState: Flow<FormState>,
-                              onValueChange:(String)->Unit,
-                                    withErrorMessage:Boolean,
+@Composable fun SimplePasswordField(modifier: Modifier ,
+                                    formState: Flow<FormState> ,
+                                    onValueChange:(String)->Unit ,
+                                    withErrorMessage:Boolean ,
 ){
     FormField(modifier = modifier, withErrorMessage = withErrorMessage, formStateFlow = formState) {flow , _->
         var isVisible by remember { mutableStateOf(false)}

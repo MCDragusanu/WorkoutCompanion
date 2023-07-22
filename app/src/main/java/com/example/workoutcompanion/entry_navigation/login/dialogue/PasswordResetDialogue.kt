@@ -18,8 +18,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.workoutcompanion.R
-import com.example.workoutcompanion.common.FormState
-import com.example.workoutcompanion.common.UIState
+import com.example.workoutcompanion.common.composables.FormState
+import com.example.workoutcompanion.common.composables.UIState
 import com.example.workoutcompanion.common.composables.AnimatedStatefulCallToAction
 import com.example.workoutcompanion.common.composables.EmailField
 import com.example.workoutcompanion.ui.Typography
@@ -27,11 +27,11 @@ import com.example.workoutcompanion.ui.cardShapes
 import kotlinx.coroutines.flow.Flow
 
 @Composable
-fun ResetPasswordDialogue( onDismiss:()->Unit,
-                           formState: Flow<FormState>, 
-                           ctaState:Flow<UIState> , 
-                           onEmailChanged:(String)->Unit,
-                           onSendEmail:()->Unit ) {
+fun ResetPasswordDialogue(onDismiss:()->Unit ,
+                          formState: Flow<FormState> ,
+                          ctaState:Flow<UIState> ,
+                          onEmailChanged:(String)->Unit ,
+                          onSendEmail:()->Unit ) {
     val currentState by ctaState.collectAsState(initial = UIState.Enabled)
     Dialog(onDismissRequest = { onDismiss() } ,
         properties = DialogProperties(dismissOnBackPress = true , dismissOnClickOutside = true)) {

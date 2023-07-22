@@ -33,19 +33,12 @@ class EntryActivitiy : ComponentActivity() {
         }
         setContent {
             WorkoutCompanionTheme {// A surface container using the 'background' color from the theme
-                val viewModel = hiltViewModel<LoginViewModel>()
-                viewModel.setLoginCallback {
-                    Log.d("Test" , "Login callback called")
-                    startMainActivity(it)
-                }
-                val onBoardViewModel = hiltViewModel<OnBoardViewModel>()
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     MainNavigation(
-                        loginViewModel = viewModel,
-                        onBoardViewModel = onBoardViewModel,
                         onLoginCompleted = { startMainActivity(it) },
                         startWorkoutDesignActivity = {
                         startWorkoutDesignActivity(it)

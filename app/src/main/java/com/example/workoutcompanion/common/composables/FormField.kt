@@ -10,14 +10,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import com.example.workoutcompanion.common.FormState
+import com.example.workoutcompanion.common.composables.FormState
 import kotlinx.coroutines.flow.Flow
 
 @Composable
-fun FormField(modifier: Modifier,
-              withErrorMessage:Boolean,
-              formStateFlow: Flow<FormState>,
-              content:@Composable()(formState:Flow<FormState> , Modifier)->Unit,
+fun FormField(modifier: Modifier ,
+              withErrorMessage:Boolean ,
+              formStateFlow: Flow<FormState> ,
+              content:@Composable()(formState:Flow<FormState> , Modifier)->Unit ,
               ) {
     val currentState by formStateFlow.collectAsState(initial = FormState())
     Column(modifier = Modifier.wrapContentSize()) {
