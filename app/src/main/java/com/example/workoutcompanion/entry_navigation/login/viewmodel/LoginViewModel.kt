@@ -13,6 +13,7 @@ import com.example.workoutcompanion.common.use_cases.email.ValidateEmail
 import com.example.workoutcompanion.core.data.di.Testing
 import com.example.workoutcompanion.core.data.auth_service.AuthManager
 import com.example.workoutcompanion.core.data.di.Production
+import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -21,7 +22,11 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     @Testing
-    private val auth : AuthManager ,
+    private val auth : AuthManager,
+
+    @Testing
+    private val repository : ExerciseRepository,
+
     private val networkObserver: NetworkObserver
                                          ):ViewModel() {
 
@@ -262,11 +267,18 @@ class LoginViewModel @Inject constructor(
                         onError = { onError(it) } ,
                         onSuccess = { uid ->
                             // Put the UI in the completed state
-                            viewModelScope.launch(Dispatchers.Main){
-                                putUiInCompletedState()
-                                delay(500)
-                                onLoginCompleted.invoke(uid)
-
+                            viewModelScope.launch(Dispatchers.IO) {
+                                val res = repository.onUpdateLocalDatabase()
+                                if (res.isFailure) {
+                                    res.exceptionOrNull()
+                                        ?: Exception("Unknown error has occurred while caching database")
+                                } else {
+                                    withContext(Dispatchers.Main) {
+                                        putUiInCompletedState()
+                                        delay(500)
+                                        onLoginCompleted.invoke(uid)
+                                    }
+                                }
                             }
                         }
                     )

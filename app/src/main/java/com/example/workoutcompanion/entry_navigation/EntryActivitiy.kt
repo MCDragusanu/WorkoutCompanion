@@ -2,7 +2,6 @@ package com.example.workoutcompanion.entry_navigation
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,13 +9,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.lifecycleScope
 import com.example.compose.WorkoutCompanionTheme
-import com.example.workoutcompanion.MainActivity
+import com.example.workoutcompanion.core.presentation.MainActivity
 import com.example.workoutcompanion.workout_designer.WorkoutDesignActivity
-import com.example.workoutcompanion.entry_navigation.login.viewmodel.LoginViewModel
-import com.example.workoutcompanion.entry_navigation.on_board.view_model.OnBoardViewModel
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -38,7 +34,7 @@ class EntryActivitiy : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainNavigation(
+                    EntryNavigation(
                         onLoginCompleted = { startMainActivity(it) },
                         startWorkoutDesignActivity = {
                         startWorkoutDesignActivity(it)

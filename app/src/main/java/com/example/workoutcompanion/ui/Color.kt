@@ -10,12 +10,12 @@ import androidx.compose.ui.graphics.ColorMatrix
 // Light Theme
 val md_theme_light_primary = Color(0xFF1189F3) // Blue
 val md_theme_light_onPrimary = Color(0xFFFFFFFF) // White
-val md_theme_light_primaryContainer = Color(0xFFC5D5F5) // Light Blue
+val md_theme_light_primaryContainer = Color(0xFFD0DBF1) // Light Blue
 val md_theme_light_onPrimaryContainer = Color(0xFF000000) // Black
 val md_theme_light_secondary = Color(0xFF00B0FF) // Light Blue
-val md_theme_light_onSecondary = Color(0xFF000000) // Black
+val md_theme_light_onSecondary = Color( 0xFFFFFFFF) // Black
 val md_theme_light_secondaryContainer = Color(0xFF86C4F5) // Pale Blue
-val md_theme_light_onSecondaryContainer = Color(0xFF000000) // Black
+val md_theme_light_onSecondaryContainer = Color( 0xFFFFFFFF) // Black
 val md_theme_light_tertiary = Color(0xFF8BC34A) // Green
 val md_theme_light_onTertiary = Color(0xFF000000) // Black
 val md_theme_light_tertiaryContainer = Color(0xFF5E8E2A) // Dark Green
@@ -41,12 +41,12 @@ val md_theme_light_scrim = Color(0x19000000) // Black with 10% opacity
 
 val md_theme_dark_primary = Color(0xFF1189F3) // Softer Blue
 val md_theme_dark_onPrimary = Color(0xFFFFFFFF) // White
-val md_theme_dark_primaryContainer = Color(0xFF02070D) // Dark Navy (Slightly Darker Shade)
+val md_theme_dark_primaryContainer = Color(0xFF040E1A) // Dark Navy (Slightly Darker Shade)
 val md_theme_dark_onPrimaryContainer = Color(0xFFFFFFFF) // White
 val md_theme_dark_secondary = Color(0xFF00E6FF) // Neon Blue
 val md_theme_dark_onSecondary = Color(0xFF000000) // Black
 val md_theme_dark_secondaryContainer = Color(0xFF0C3548) // Dark Navy (Slightly Darker Shade)
-val md_theme_dark_onSecondaryContainer = Color(0xFFFFFFFF) // White
+val md_theme_dark_onSecondaryContainer = Color(0xFF000000) // White
 val md_theme_dark_tertiary = Color(0xFF2E5F80) // Darker Light Blue
 val md_theme_dark_onTertiary = Color(0xFFFFFFFF) // White
 val md_theme_dark_tertiaryContainer = Color(0xFF173F57) // Subtle Shade of Navy
@@ -102,7 +102,24 @@ val md_theme_dark_outlineVariant = Color(0xFF2B2B2B) // Gray
 val md_theme_dark_scrim = Color(0xFF000000) // Black*/
 
 val seed = Color(0xFF3C5BA9)
-
+val colorMuscleGroups1 = listOf(
+    Color(0xFFBA68C8),Color(0xFFF06292),
+    Color(0xFFBA68C8),Color(0xFF7986CB),
+    Color(0xFF64B5F6),Color(0xFF4DD0E1),
+    Color(0xFF4DB6AC),Color(0xFF9CCC65),
+    Color(0xFFD4E157),Color(0xFFFFCA28),
+    Color(0xFFCAC226),Color(0xFFFF7043),
+    Color(0xFFCA9326) ,Color(0xFFFF5343) ,
+)
+val colorMuscleGroups2 = listOf (
+    Color(0xFFEF9A9A),Color(0xFFCE93D8),
+    Color(0xFFB39DDB),Color(0xFF90CAF9),
+    Color(0xFF9FA8DA),Color(0xFF90CAF9),
+    Color(0xFF90CAF9),Color(0xFF80DEEA),
+    Color(0xFFC5E1A5),Color(0xFFFFF59D),
+    Color(0xFFE6EE9C),Color(0xFFFFAB91),
+    Color(0xFFEED39C) ,Color(0xFFFF9591) ,
+)
 data class WorkoutCompanionColors(val materialTheme: ColorScheme,
                                   val successContainer:Color = Color(0xFF66BB6A),
                                   val onSuccessContainer:Color = Color(0xFFC8E6C9),

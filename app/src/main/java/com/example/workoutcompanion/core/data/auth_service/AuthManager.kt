@@ -66,6 +66,8 @@ interface AuthManager {
         FirebaseAuth.getInstance().signOut()
     }
 
+     fun getCurrentUserUid():String?
+
     sealed class Errors(message:String):Exception(message){
 
         object NoEmailProvided: Errors("No email provided")//

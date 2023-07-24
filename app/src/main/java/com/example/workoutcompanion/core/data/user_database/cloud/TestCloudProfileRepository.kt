@@ -1,5 +1,6 @@
 package com.example.workoutcompanion.core.data.user_database.cloud
 
+import android.util.Log
 import com.example.workoutcompanion.core.data.user_database.common.UserProfile
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
 import com.example.workoutcompanion.core.data.user_database.common.guestProfile
@@ -15,6 +16,7 @@ class TestCloudProfileRepository : ProfileRepository {
         scope : CoroutineScope
     ) : Result<UserProfile> {
         delay(2000)
+        Log.d("Test" , "guest profile has been retrieved")
         return Result.success(guestProfile)
     }
 
@@ -23,11 +25,13 @@ class TestCloudProfileRepository : ProfileRepository {
         newProfile : UserProfile
     ) : Result<Nothing?> {
         delay(2000)
+        Log.d("Test" , "guest profile has been 'updated' ")
         return Result.success(null)
     }
 
     override suspend fun deleteProfile(userUid : String) : Result<Nothing?> {
         delay(2000)
+        Log.d("Test" , "guest profile has been deleted")
         return Result.success(null)
     }
 

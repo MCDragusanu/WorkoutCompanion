@@ -1,10 +1,15 @@
 package com.example.workoutcompanion.core.data.user_database.common
 
 import android.util.Log
+import com.example.workoutcompanion.core.data.auth_service.AuthManager
+import kotlinx.coroutines.CoroutineScope
 import javax.inject.Inject
 
 
-class ProfileRepositoryImpl @Inject constructor(private val cloudRepository : ProfileRepository , private val localRepository : ProfileRepository) {
+class ProfileRepositoryImpl @Inject constructor(private val cloudRepository : ProfileRepository,
+                                                private val localRepository : ProfileRepository,
+                                                val authManager:AuthManager
+                                                ) {
 
 
     suspend fun addProfile(userProfile : UserProfile):Result<Nothing?>{
@@ -38,4 +43,18 @@ class ProfileRepositoryImpl @Inject constructor(private val cloudRepository : Pr
             Result.failure(e)
         }
     }
+
+
+    suspend fun getCloudProfile(externalScope:CoroutineScope):Result<UserProfile?> {
+        val uid = authManager.getCurrentUserUid() ?: return Result.failure(NullPointerException("There is no user signed in"))
+
+        val profile = cloudRepository.getProfileByUid(uid , externalScope).getOrNull()
+
+        if(profile!=null){
+            localRepository.updateProfile(profile.uid , profile)
+        }
+
+        return Result.success(profile)
+    }
+
 }

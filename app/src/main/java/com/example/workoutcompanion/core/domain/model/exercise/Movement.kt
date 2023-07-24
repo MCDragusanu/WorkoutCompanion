@@ -1,4 +1,4 @@
-package com.example.workoutcompanion.core.domain.model
+package com.example.workoutcompanion.core.domain.model.exercise
 
 
 
@@ -224,6 +224,8 @@ enum class Movement(
         secondaryMuscleGroups = listOf(),
         movementUid = 19,
         instructionList = emptyList()
-    )
+    );
+
+
 
 }

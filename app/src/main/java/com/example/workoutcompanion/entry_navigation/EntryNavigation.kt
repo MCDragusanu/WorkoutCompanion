@@ -18,7 +18,7 @@ import com.example.workoutcompanion.entry_navigation.on_board.view_model.OnBoard
 
 
 @Composable
-fun MainNavigation(
+fun EntryNavigation(
                    onLoginCompleted:(String)->Unit ,
                    startWorkoutDesignActivity:(String)->Unit ,
                    startMainActivity:(String)->Unit ,

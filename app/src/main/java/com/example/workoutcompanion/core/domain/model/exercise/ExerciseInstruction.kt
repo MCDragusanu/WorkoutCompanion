@@ -1,4 +1,4 @@
-package com.example.workoutcompanion.core.domain.model
+package com.example.workoutcompanion.core.domain.model.exercise
 
 class ExerciseInstruction(val uid:Int ,
                           val exerciseUid:Int,

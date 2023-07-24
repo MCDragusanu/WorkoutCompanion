@@ -7,25 +7,29 @@ import com.example.workoutcompanion.core.data.user_database.local.TestLocalRepos
 
 class ExerciseRepositoryTestImpl(private val cloudDataSource : ExerciseDataSource , private  val localRepository :  LocalExerciseRepository) : ExerciseRepository {
     override suspend fun getCloudDatabase() : Result<List<ExerciseDocument>> {
+       Log.d("Test" , "@ExerciseRepositoryTestImpl.getCloudDatabase-> invoked")
        return cloudDataSource.getExerciseCollection()
     }
 
     override suspend fun getCachedDatabase() : Result<List<ExerciseDocument>> {
-      return localRepository.getExerciseCollection()
+        Log.d("Test" , "@ExerciseRepositoryTestImpl.getCachedDatabase-> invoked")
+        return localRepository.getExerciseCollection()
     }
 
     override suspend fun getCloudLatestVersion() : Result<VersionMetadata?> {
+        Log.d("Test" , "@ExerciseRepositoryTestImpl.getCloudLatestVersion-> invoked")
        return cloudDataSource.getCurrentDatabaseVersion()
     }
 
     override suspend fun getCurrentVersionCached() : Result<VersionMetadata?> {
+        Log.d("Test" , "@ExerciseRepositoryTestImpl.getCurrentVersionCached-> invoked")
         return localRepository.getCurrentDatabaseVersion()
     }
 
     override suspend fun onUpdateLocalDatabase() : Result<Nothing?> {
 
         return try {
-            Log.d("Test" , "Task started")
+            Log.d("Test" , "@ExerciseRepositoryTestImpl.onUpdateLocalDatabase-> started")
             val localVersion = getCurrentVersionCached().getOrNull()
 
             val cloudVersion = getCloudLatestVersion().getOrNull()

@@ -1,4 +1,4 @@
-package com.example.workoutcompanion.core.domain.model;
+package com.example.workoutcompanion.core.domain.model.exercise;
 
 enum class MuscleGroup {
     Chest,

@@ -1,5 +1,6 @@
 package com.example.workoutcompanion.core.data.exercise_database.local
 
+import android.util.Log
 import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseDocument
 import com.example.workoutcompanion.core.data.exercise_database.version_control.common.VersionMetadata
 import com.example.workoutcompanion.core.data.exercise_database.common.DatabaseVersion
@@ -10,6 +11,7 @@ class LocalExerciseRepositoryImpl @Inject constructor(private val exerciseDao : 
                                                       ) : LocalExerciseRepository {
     override suspend fun addExercise(exerciseDocument : ExerciseDocument) : Result<Nothing?> {
         return try {
+
             exerciseDao.insertExercise(exerciseDocument)
             Result.success(null)
         } catch (e:Exception){
@@ -21,6 +23,7 @@ class LocalExerciseRepositoryImpl @Inject constructor(private val exerciseDao : 
     override suspend fun updateExercise(exerciseDocument : ExerciseDocument) : Result<Nothing?> {
         return try {
             exerciseDao.updateExercise(exerciseDocument)
+
             Result.success(null)
         } catch (e:Exception){
             Result.failure(e)
@@ -30,6 +33,7 @@ class LocalExerciseRepositoryImpl @Inject constructor(private val exerciseDao : 
     override suspend fun persistVersion(version : DatabaseVersion) : Result<Nothing?> {
         return try {
             versionDao.insertMetadata(version.metadata)
+
             version.content.onEach {
                 exerciseDao.insertExercise(it)
             }

@@ -250,7 +250,7 @@ class OnBoardViewModel @Inject constructor(
                 email = _emailFormState.value.text ,
                 providerId = "EMAIL" ,
                 firstName = _firstNameFormState.value.text ,
-                lastName = _firstNameFormState.value.text ,
+                lastName = _lastNameFormState.value.text ,
                 isEmailVerified = false ,
             )
            val result =  userRepo.addProfile(userProfile = profile)

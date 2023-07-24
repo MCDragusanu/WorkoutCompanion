@@ -1,5 +1,6 @@
 package com.example.workoutcompanion.core.data.auth_service
 
+import com.example.workoutcompanion.core.data.user_database.common.guestProfile
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.*
 import kotlinx.coroutines.Dispatchers
@@ -22,7 +23,7 @@ class AuthManagerTestImpl : AuthManager {
 
             onLoading()
             delay(1500)
-            onSuccess("TEST_USER_UID")
+            onSuccess(guestProfile.uid)
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
                 translateError(e, onError)
@@ -42,7 +43,7 @@ class AuthManagerTestImpl : AuthManager {
             if (password.isEmpty()) throw AuthManager.Errors.NoPasswordProvided
             onLoading()
            delay(1500)
-            onSuccess("TEST_USER_UID")
+            onSuccess(guestProfile.uid)
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
                 translateError(e, onError)
@@ -62,7 +63,7 @@ class AuthManagerTestImpl : AuthManager {
             if (password.isEmpty()) throw AuthManager.Errors.NoPasswordProvided
             onLoading()
             delay(1500)
-            onSuccess("TEST_USER_UID")
+            onSuccess(guestProfile.uid)
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
                 translateError(e, onError)
@@ -150,7 +151,11 @@ class AuthManagerTestImpl : AuthManager {
         }
     }
 
-   private fun translateError(exception: Exception, callback: (Exception) -> Unit) {
+    override fun getCurrentUserUid() : String? {
+        return guestProfile.uid
+    }
+
+    private fun translateError(exception: Exception, callback: (Exception) -> Unit) {
         val translatedError = when (exception) {
 
             is AuthManager.Errors.InvalidEmail -> AuthManager.Errors.InvalidEmail

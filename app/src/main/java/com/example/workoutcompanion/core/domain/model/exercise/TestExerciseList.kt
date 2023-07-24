@@ -1,4 +1,4 @@
-package com.example.workoutcompanion.core.domain.model
+package com.example.workoutcompanion.core.domain.model.exercise
 
 public val exerciseList = listOf(
     Exercise(

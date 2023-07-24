@@ -2,6 +2,7 @@ package com.example.workoutcompanion.core.data.user_database.module
 
 import android.app.Application
 import android.util.Log
+import com.example.workoutcompanion.core.data.auth_service.AuthModule
 import com.example.workoutcompanion.core.data.user_database.cloud.TestCloudProfileRepository
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepositoryImpl
@@ -45,7 +46,7 @@ object TestingModule {
     @Testing
     fun provideProfileRepository(application : Application): ProfileRepositoryImpl {
         Log.d("Test" , "Provided test Profile Repository")
-        return ProfileRepositoryImpl(provideTestCloudRepository() , provideTestLocalRepository(application))
+        return ProfileRepositoryImpl(provideTestCloudRepository() , provideTestLocalRepository(application) , AuthModule.provideTestAuthService())
 
     }
 }

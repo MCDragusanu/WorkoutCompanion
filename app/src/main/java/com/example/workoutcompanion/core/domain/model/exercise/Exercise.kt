@@ -1,4 +1,4 @@
-package com.example.workoutcompanion.core.domain.model
+package com.example.workoutcompanion.core.domain.model.exercise
 
 import android.util.Log
 import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseDocument

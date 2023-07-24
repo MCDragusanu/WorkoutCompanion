@@ -1,13 +1,10 @@
 package com.example.workoutcompanion.core.data.auth_service
 
-import com.example.workoutcompanion.common.NetworkObserver
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
 class AuthManagerImpl: AuthManager {
     private val auth : FirebaseAuth = FirebaseAuth.getInstance()
@@ -183,6 +180,10 @@ class AuthManagerImpl: AuthManager {
                 translateError(e, onError)
             }
         }
+    }
+
+    override  fun getCurrentUserUid() : String? {
+        return FirebaseAuth.getInstance().currentUser?.uid
     }
 
     fun translateError(exception: Exception, callback: (Exception) -> Unit) {

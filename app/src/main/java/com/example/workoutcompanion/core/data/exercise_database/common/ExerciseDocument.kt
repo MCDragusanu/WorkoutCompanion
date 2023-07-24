@@ -3,10 +3,10 @@ package com.example.workoutcompanion.core.data.exercise_database.common
 import android.util.Log
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.example.workoutcompanion.core.domain.model.Exercise
-import com.example.workoutcompanion.core.domain.model.ExerciseInstruction
-import com.example.workoutcompanion.core.domain.model.GripStyle
-import com.example.workoutcompanion.core.domain.model.Movement
+import com.example.workoutcompanion.core.domain.model.exercise.Exercise
+import com.example.workoutcompanion.core.domain.model.exercise.ExerciseInstruction
+import com.example.workoutcompanion.core.domain.model.exercise.GripStyle
+import com.example.workoutcompanion.core.domain.model.exercise.Movement
 
 @Entity("exercise_document_table")
 data class ExerciseDocument(
