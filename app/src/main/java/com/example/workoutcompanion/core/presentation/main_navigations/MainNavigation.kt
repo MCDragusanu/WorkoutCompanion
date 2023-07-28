@@ -132,16 +132,16 @@ object MainNavigation {
                     displayNavBar()
                 } ,
                     onSubmitWorkout = {
-                        workoutViewModel.onSubmittedWorkout(it)
+                       workoutViewModel.onSubmittedWorkout(it)
                         //TODO think if you make the user navigate now to the workout screen
-                        navController.navigate(WorkoutScreen.route)
+                       navController.navigate(WorkoutScreen.route)
                     })
             }
             composable(WorkoutScreen.route) {
                 displayNavBar()
                 WorkoutScreen.invoke(workoutViewModel , onNavigateToExerciseDatabase = {
                     navController.navigate(DatabaseScreen.route)
-                })
+                } , onHideNavBar = hideNavBar , onShowNavBar = displayNavBar)
             }
         }
     }

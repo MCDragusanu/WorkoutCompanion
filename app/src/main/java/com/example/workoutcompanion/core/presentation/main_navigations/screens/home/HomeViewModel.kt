@@ -3,9 +3,7 @@ package com.example.workoutcompanion.core.presentation.main_navigations.screens.
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.workoutcompanion.core.data.di.Production
 import com.example.workoutcompanion.core.data.di.Testing
-import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepositoryImpl
 import com.example.workoutcompanion.core.data.user_database.common.UserProfile
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,7 +23,7 @@ class HomeViewModel @Inject constructor(@Testing private val repository : Profil
 
     init {
         viewModelScope.launch(Dispatchers.IO){
-            val profile = repository.getCloudProfile(this)
+            val profile = repository.getCurrentUser(this)
             if(profile.isFailure){
                 Log.d("Test" , (profile.exceptionOrNull()?:Exception("Unknown exception has occured while retrieving your profile")).stackTraceToString())
                 return@launch

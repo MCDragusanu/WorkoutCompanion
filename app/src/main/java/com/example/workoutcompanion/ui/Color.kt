@@ -123,7 +123,10 @@ val colorMuscleGroups2 = listOf (
 data class WorkoutCompanionColors(val materialTheme: ColorScheme,
                                   val successContainer:Color = Color(0xFF66BB6A),
                                   val onSuccessContainer:Color = Color(0xFFC8E6C9),
-                                  val successColor:Color = Color(0xFF7CB342)){
+                                  val successColor:Color = Color(0xFF7CB342),
+                                  val secondarySurfaceColor:Color,
+                                  val tertiarySurfaceColor:Color,
+                                  ){
     val primary: Color get() = materialTheme.primary
     val primaryVariant: Color get() = materialTheme.inversePrimary
     val secondary: Color get() = materialTheme.secondary
@@ -144,12 +147,20 @@ data class WorkoutCompanionColors(val materialTheme: ColorScheme,
          materialTheme = LightColors ,
          successColor = Color(0xFF3CDB38) ,
          successContainer = Color(0xFF6DDB6F),
-         onSuccessContainer = Color(0xFF09420A)
+         onSuccessContainer = Color(0xFF09420A),
+         secondarySurfaceColor = Color(0xFFD1EEF7) ,
+         tertiarySurfaceColor = Color(0xFFBDD7DF)
      )
  }
- val DarkColorPalette = staticCompositionLocalOf{ WorkoutCompanionColors(materialTheme = DarkColors ,successColor = Color(0xFF3CDB38) ,
-     successContainer = Color(0xFF6DDB6F),
-     onSuccessContainer = Color(0xFF09420A)) }
+ val DarkColorPalette = staticCompositionLocalOf {
+     WorkoutCompanionColors(
+         materialTheme = DarkColors , successColor = Color(0xFF3CDB38) ,
+         successContainer = Color(0xFF6DDB6F) ,
+         onSuccessContainer = Color(0xFF09420A) ,
+         secondarySurfaceColor = Color(0xFF161C27) ,
+         tertiarySurfaceColor = Color(0xFF10131A) ,
+     )
+ }
 
 @Composable
 fun getPalette() = if(isSystemInDarkTheme()) DarkColorPalette else LightColorPalette

@@ -14,4 +14,6 @@ interface LocalExerciseRepository: ExerciseDataSource {
 
     suspend fun clearDatabase():Result<Nothing?>
 
+    suspend fun getExerciseByUid(uid:Int):ExerciseDocument
+
 }

@@ -53,6 +53,10 @@ class LocalExerciseRepositoryImpl @Inject constructor(private val exerciseDao : 
        }
     }
 
+    override suspend fun getExerciseByUid(uid : Int) : ExerciseDocument {
+        return exerciseDao.getExerciseByUid(uid)
+    }
+
     override suspend fun getExerciseCollection() : Result<List<ExerciseDocument>> {
         return try {
             Result.success(exerciseDao.getExercises())

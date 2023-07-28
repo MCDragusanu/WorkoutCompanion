@@ -73,4 +73,12 @@ class ExerciseRepositoryTestImpl(private val cloudDataSource : ExerciseDataSourc
 
     }
 
+    override suspend fun getCachedExerciseByUid(uid : Int) : Result<ExerciseDocument> {
+        return try {
+            Result.success(localRepository.getExerciseByUid(uid))
+        }catch (e:Exception){
+            Result.failure(e)
+        }
+    }
+
 }

@@ -18,6 +18,11 @@ interface ExerciseDocumentDao {
     @Query("SELECT * from exercise_document_table")
     suspend fun getExercises():List<ExerciseDocument>
 
+
+    @Query("SELECT * from exercise_document_table where uid = :uid")
+    suspend fun getExerciseByUid(uid:Int):ExerciseDocument
+
+
     @Query("DELETE from exercise_document_table")
     suspend fun deleteExercises()
 

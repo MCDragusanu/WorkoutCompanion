@@ -1,9 +1,6 @@
 package com.example.workoutcompanion.core.data.exercise_database.common
 
-import android.util.Log
 import com.example.workoutcompanion.core.data.exercise_database.local.LocalExerciseRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 
@@ -61,6 +58,14 @@ import javax.inject.Inject
             Result.failure(e)
         }
 
+    }
+
+    override suspend fun getCachedExerciseByUid(uid : Int) : Result<ExerciseDocument> {
+         return try {
+            Result.success( localRepository.getExerciseByUid(uid)  )
+         } catch (e:Exception){
+             Result.failure(e)
+         }
     }
 }
 

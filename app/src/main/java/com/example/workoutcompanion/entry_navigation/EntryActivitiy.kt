@@ -4,13 +4,16 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.compose.WorkoutCompanionTheme
+import com.example.workoutcompanion.common.composables.BarChart
 import com.example.workoutcompanion.core.presentation.MainActivity
 import com.example.workoutcompanion.workout_designer.WorkoutDesignActivity
 import com.google.firebase.auth.FirebaseAuth
@@ -30,7 +33,7 @@ class EntryActivitiy : ComponentActivity() {
         setContent {
             WorkoutCompanionTheme {// A surface container using the 'background' color from the theme
 
-                Surface(
+               Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
@@ -44,6 +47,7 @@ class EntryActivitiy : ComponentActivity() {
                         }
                     )
                 }
+                //Box(modifier = Modifier.fillMaxSize() , contentAlignment = Alignment.Center){ BarChart() }
             }
         }
     }

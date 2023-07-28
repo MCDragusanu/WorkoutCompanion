@@ -45,7 +45,7 @@ class ProfileRepositoryImpl @Inject constructor(private val cloudRepository : Pr
     }
 
 
-    suspend fun getCloudProfile(externalScope:CoroutineScope):Result<UserProfile?> {
+    suspend fun getCurrentUser(externalScope:CoroutineScope):Result<UserProfile?> {
         val uid = authManager.getCurrentUserUid() ?: return Result.failure(NullPointerException("There is no user signed in"))
 
         val profile = cloudRepository.getProfileByUid(uid , externalScope).getOrNull()
