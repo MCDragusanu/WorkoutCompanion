@@ -16,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.compose.WorkoutCompanionColors
+import com.example.compose.getPalette
 import com.example.workoutcompanion.common.use_cases.password.PasswordProperties
 import kotlinx.coroutines.flow.Flow
 
@@ -67,7 +68,7 @@ fun PasswordFieldWithStrengthMeter(formState: Flow<FormState> ,
                 requiredProperties.onEach {
                     val color = when{
                         currentState.state.isError() && !it.condition(currentState.text)-> MaterialTheme.colorScheme.onErrorContainer
-                        it.condition(currentState.text)-> WorkoutCompanionColors(materialTheme =MaterialTheme.colorScheme).successColor
+                        it.condition(currentState.text)-> getPalette().current.successColor
                         else ->MaterialTheme.colorScheme.onBackground.copy(0.5f)
                     }
 

@@ -3,33 +3,31 @@ package com.example.workoutcompanion.core.data.exercise_database.common
 import android.util.Log
 import com.example.workoutcompanion.core.data.exercise_database.local.LocalExerciseRepository
 import com.example.workoutcompanion.core.data.exercise_database.version_control.common.VersionMetadata
-import com.example.workoutcompanion.core.data.user_database.local.TestLocalRepository
 
 class ExerciseRepositoryTestImpl(private val cloudDataSource : ExerciseDataSource , private  val localRepository :  LocalExerciseRepository) : ExerciseRepository {
     override suspend fun getCloudDatabase() : Result<List<ExerciseDocument>> {
-       Log.d("Test" , "@ExerciseRepositoryTestImpl.getCloudDatabase-> invoked")
+
        return cloudDataSource.getExerciseCollection()
     }
 
     override suspend fun getCachedDatabase() : Result<List<ExerciseDocument>> {
-        Log.d("Test" , "@ExerciseRepositoryTestImpl.getCachedDatabase-> invoked")
+
         return localRepository.getExerciseCollection()
     }
 
     override suspend fun getCloudLatestVersion() : Result<VersionMetadata?> {
-        Log.d("Test" , "@ExerciseRepositoryTestImpl.getCloudLatestVersion-> invoked")
+
        return cloudDataSource.getCurrentDatabaseVersion()
     }
 
     override suspend fun getCurrentVersionCached() : Result<VersionMetadata?> {
-        Log.d("Test" , "@ExerciseRepositoryTestImpl.getCurrentVersionCached-> invoked")
+
         return localRepository.getCurrentDatabaseVersion()
     }
 
     override suspend fun onUpdateLocalDatabase() : Result<Nothing?> {
 
         return try {
-            Log.d("Test" , "@ExerciseRepositoryTestImpl.onUpdateLocalDatabase-> started")
             val localVersion = getCurrentVersionCached().getOrNull()
 
             val cloudVersion = getCloudLatestVersion().getOrNull()
@@ -63,6 +61,8 @@ class ExerciseRepositoryTestImpl(private val cloudDataSource : ExerciseDataSourc
                     }
 
                 }
+            } else {
+                Log.d("Test" ,"Database is already up to date" )
             }
             Log.d("Test" , "Action Completed")
             Result.success(null)
@@ -71,6 +71,14 @@ class ExerciseRepositoryTestImpl(private val cloudDataSource : ExerciseDataSourc
             Result.failure(e)
         }
 
+    }
+
+    override suspend fun getCachedExerciseByUid(uid : Int) : Result<ExerciseDocument> {
+        return try {
+            Result.success(localRepository.getExerciseByUid(uid))
+        }catch (e:Exception){
+            Result.failure(e)
+        }
     }
 
 }

@@ -41,11 +41,11 @@ val md_theme_light_scrim = Color(0x19000000) // Black with 10% opacity
 
 val md_theme_dark_primary = Color(0xFF1189F3) // Softer Blue
 val md_theme_dark_onPrimary = Color(0xFFFFFFFF) // White
-val md_theme_dark_primaryContainer = Color(0xFF040E1A) // Dark Navy (Slightly Darker Shade)
+val md_theme_dark_primaryContainer = Color(0xFF0D0D0E) // Dark Navy (Slightly Darker Shade)
 val md_theme_dark_onPrimaryContainer = Color(0xFFFFFFFF) // White
 val md_theme_dark_secondary = Color(0xFF00E6FF) // Neon Blue
 val md_theme_dark_onSecondary = Color(0xFF000000) // Black
-val md_theme_dark_secondaryContainer = Color(0xFF0C3548) // Dark Navy (Slightly Darker Shade)
+val md_theme_dark_secondaryContainer = Color(0xFF141416) // Dark Navy (Slightly Darker Shade)
 val md_theme_dark_onSecondaryContainer = Color(0xFF000000) // White
 val md_theme_dark_tertiary = Color(0xFF2E5F80) // Darker Light Blue
 val md_theme_dark_onTertiary = Color(0xFFFFFFFF) // White
@@ -57,7 +57,7 @@ val md_theme_dark_onError = Color(0xFFFFFFFF) // White
 val md_theme_dark_onErrorContainer = Color(0xFFFF385C) // Red
 val md_theme_dark_background = Color(0xFF000000) // Black (or very dark shade of navy)
 val md_theme_dark_onBackground = Color(0xFFFFFFFF) // White
-val md_theme_dark_surface = Color(0xFF021626) // Darker Shade of Navy
+val md_theme_dark_surface = Color(0xFF222325) // Darker Shade of Navy
 val md_theme_dark_onSurface = Color(0xFFFFFFFF) // White
 val md_theme_dark_surfaceVariant = Color(0xFF113343) // Dark Navy (Slightly Darker Shade)
 val md_theme_dark_onSurfaceVariant = Color(0xFFFFFFFF) // White
@@ -123,7 +123,10 @@ val colorMuscleGroups2 = listOf (
 data class WorkoutCompanionColors(val materialTheme: ColorScheme,
                                   val successContainer:Color = Color(0xFF66BB6A),
                                   val onSuccessContainer:Color = Color(0xFFC8E6C9),
-                                  val successColor:Color = Color(0xFF7CB342)){
+                                  val successColor:Color = Color(0xFF7CB342),
+                                  val secondarySurfaceColor:Color,
+                                  val tertiarySurfaceColor:Color,
+                                  ){
     val primary: Color get() = materialTheme.primary
     val primaryVariant: Color get() = materialTheme.inversePrimary
     val secondary: Color get() = materialTheme.secondary
@@ -144,12 +147,20 @@ data class WorkoutCompanionColors(val materialTheme: ColorScheme,
          materialTheme = LightColors ,
          successColor = Color(0xFF3CDB38) ,
          successContainer = Color(0xFF6DDB6F),
-         onSuccessContainer = Color(0xFF09420A)
+         onSuccessContainer = Color(0xFF09420A),
+         secondarySurfaceColor = Color(0xFFD1EEF7) ,
+         tertiarySurfaceColor = Color(0xFFBDD7DF)
      )
  }
- val DarkColorPalette = staticCompositionLocalOf{ WorkoutCompanionColors(materialTheme = DarkColors ,successColor = Color(0xFF3CDB38) ,
-     successContainer = Color(0xFF6DDB6F),
-     onSuccessContainer = Color(0xFF09420A)) }
+ val DarkColorPalette = staticCompositionLocalOf {
+     WorkoutCompanionColors(
+         materialTheme = DarkColors , successColor = Color(0xFF3CDB38) ,
+         successContainer = Color(0xFF6DDB6F) ,
+         onSuccessContainer = Color(0xFF09420A) ,
+         secondarySurfaceColor = Color(0xFF161C27) ,
+         tertiarySurfaceColor = Color(0xFF10131A) ,
+     )
+ }
 
 @Composable
 fun getPalette() = if(isSystemInDarkTheme()) DarkColorPalette else LightColorPalette

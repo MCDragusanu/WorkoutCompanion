@@ -13,7 +13,7 @@
         android:theme="@style/Theme.WorkoutCompanion"
         tools:targetApi="31">
         <activity
-            android:name=".entry_navigation.EntryActivitiy"
+            android:name=".on_board.EntryActivitiy"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.WorkoutCompanion">

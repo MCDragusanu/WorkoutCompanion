@@ -70,9 +70,9 @@ fun AnimatedStatefulCallToAction(ctaState: Flow<UIState> ,
     }
 }
 @Composable
-fun AnimatedButton(modifier : Modifier ,
-                   action:()->Unit ,
-                   content:@Composable()(containerColor: Color , contentColor:Color)->Unit ,
+fun AnimatedPrimaryButton(modifier : Modifier ,
+                          action:()->Unit ,
+                          content:@Composable()(containerColor: Color , contentColor:Color)->Unit ,
                                  ) {
     val interactionSource = MutableInteractionSource()
     val isPressed by interactionSource.collectIsPressedAsState()

@@ -4,6 +4,8 @@ import kotlinx.coroutines.CoroutineScope
 
 interface ProfileDataSource {
 
-   suspend  fun getProfileByUid(uid:String , scope : CoroutineScope): Result<UserProfile>
+   suspend  fun getProfileFromCloudSource(uid:String , scope : CoroutineScope): Result<UserProfile?>
+
+
 
 }

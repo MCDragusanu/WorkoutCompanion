@@ -13,4 +13,6 @@ interface ExerciseRepository {
     suspend fun getCurrentVersionCached() :Result<VersionMetadata?>
 
     suspend fun onUpdateLocalDatabase() : Result<Nothing?>
+
+    suspend fun getCachedExerciseByUid(uid:Int):Result<ExerciseDocument>
 }
