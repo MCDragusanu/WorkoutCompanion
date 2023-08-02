@@ -2,19 +2,30 @@ package com.example.workoutcompanion.core.presentation.main_navigations.training
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import com.example.workoutcompanion.R
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.workoutcompanion.common.composables.AnimatedPrimaryButton
 import com.example.workoutcompanion.core.data.workout_tracking.workout.WorkoutMetadata
 import com.example.workoutcompanion.core.presentation.main_navigations.MainNavigation
 import com.example.workoutcompanion.ui.Typography
+import com.example.workoutcompanion.ui.cardShapes
+import java.lang.Math.ceil
 
 object TrainingProgramDashboard:MainNavigation.Screens("Training Program Dashboard") {
     @Composable
@@ -31,39 +42,39 @@ object TrainingProgramDashboard:MainNavigation.Screens("Training Program Dashboa
             modifier = Modifier.fillMaxSize() ,
             containerColor = MaterialTheme.colorScheme.background
         ) {
-            Column(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(8.dp) ,
                 horizontalAlignment = Alignment.Start ,
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                Headline(
-                    modifier = Modifier
+                item{
+                    Headline(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                    )
+                }
+                item{
+                    WorkoutList(modifier = Modifier
                         .fillMaxWidth()
-                        .wrapContentHeight()
-                )
-                WorkoutList(modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight() , workouts = workouts , createNewWorkout = {
-                    onNavigateToExerciseDatabase()
-                }, onWorkoutClicked = { navigateToWorkoutScreen(it.uid , it.ownerUid) })
+                        .height((kotlin.math.ceil(workouts.size / 2.0) * 80).dp) , workouts = workouts , createNewWorkout = {
+                        onNavigateToExerciseDatabase()
+                    } , onWorkoutClicked = { navigateToWorkoutScreen(it.uid , it.ownerUid) })
+                }
             }
         }
     }
 
     @Composable
     fun WorkoutList(modifier : Modifier , workouts:List<WorkoutMetadata> , createNewWorkout:()->Unit , onWorkoutClicked:(WorkoutMetadata)->Unit) {
-        Column(
-            modifier = modifier ,
-            verticalArrangement = Arrangement.spacedBy(12.dp) ,
-            horizontalAlignment = Alignment.Start
-        ) {
+        Column() {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .wrapContentHeight(),
-                verticalAlignment = Alignment.CenterVertically,
+                    .wrapContentHeight() ,
+                verticalAlignment = Alignment.CenterVertically ,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(text = "My Workouts" , style = Typography.headlineSmall)
@@ -75,15 +86,23 @@ object TrainingProgramDashboard:MainNavigation.Screens("Training Program Dashboa
                     )
                 }
             }
-            workouts.onEach {
-                WorkoutCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp) , workoutMetadata = it,
-                    workoutClicked = onWorkoutClicked
-                )
-            }
+            LazyVerticalStaggeredGrid(
+                modifier = modifier ,
+                userScrollEnabled = false ,
+                columns = StaggeredGridCells.Fixed(2) ,
+                horizontalArrangement = Arrangement.spacedBy(4.dp) ,
+                verticalItemSpacing = 4.dp
+            ) {
+                items(workouts , key = { it.uid }) {
+                    WorkoutCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(75.dp) , workoutMetadata = it ,
+                        workoutClicked = onWorkoutClicked
+                    )
+                }
 
+            }
         }
     }
 
@@ -96,26 +115,44 @@ object TrainingProgramDashboard:MainNavigation.Screens("Training Program Dashboa
                 .clickable {
                     workoutClicked(workoutMetadata)
                 }
-                .then(modifier)
+                .then(modifier) ,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer , contentColor = MaterialTheme.colorScheme.onSecondaryContainer) ,
+            shape = cardShapes.small
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight()
                     .padding(8.dp) ,
-                horizontalArrangement = Arrangement.spacedBy(8.dp , Alignment.Start),
+                horizontalArrangement = Arrangement.spacedBy(8.dp , Alignment.Start) ,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
                     modifier = Modifier
-                        .width(2.dp)
-                        .fillMaxHeight()
-                        .background(
-                           color = Color(workoutMetadata.color) , shape = CircleShape
+                        .aspectRatio(1f)
+                        .fillMaxHeight() ,
+                    color = MaterialTheme.colorScheme.secondaryContainer
+                ) {
+                    Box(
+                        modifier = Modifier.background(
+                            brush = Brush.linearGradient(
+                                colors = listOf(
+                                    Color(workoutMetadata.gradientStart) ,
+                                    Color(workoutMetadata.gradientEnd)
+                                )
+                            )
                         ),
-                    color = Color.Transparent
-                ) {}
-                Text(text = workoutMetadata.name)
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                           if(workoutMetadata.dayOfWeek in 0 until 7) stringArrayResource(id = R.array.DaysOfWeek)[workoutMetadata.dayOfWeek].substring(0..2)  else "",
+                            fontWeight = FontWeight.Bold ,
+                            fontSize = 16.sp ,
+                            color = Color.Black
+                        )
+                    }
+                }
+                Text(text = workoutMetadata.name , color = MaterialTheme.colorScheme.onBackground)
             }
         }
     }

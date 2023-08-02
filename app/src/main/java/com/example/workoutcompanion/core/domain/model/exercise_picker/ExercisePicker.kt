@@ -4,7 +4,7 @@ import android.util.Log
 import com.example.workoutcompanion.core.domain.model.exercise.*
 
 
-//todo Implement a modification to control exercise variety
+
 
 class ExercisePicker() {
     //mapping each movement to the muscle group it targets

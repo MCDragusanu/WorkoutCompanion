@@ -21,8 +21,8 @@ import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.compose.colorMuscleGroups1
-import com.example.compose.colorMuscleGroups2
+
+import com.example.compose.getPalette
 import com.example.workoutcompanion.R
 import com.example.workoutcompanion.core.domain.model.exercise.Exercise
 import com.example.workoutcompanion.core.presentation.main_navigations.MainNavigation
@@ -165,7 +165,7 @@ object DatabaseScreen:MainNavigation.Screens("Database Screen") {
 
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
-    private fun ExerciseCard(
+     fun ExerciseCard(
         exercise : Exercise ,
         isInSelectMode : Flow<Boolean> ,
         isSelected : Boolean ,
@@ -178,10 +178,8 @@ object DatabaseScreen:MainNavigation.Screens("Database Screen") {
 
         val muscleGroupString = buildMuscleGroupString(exercise)
         val muscleGroupId = exercise.movement.primaryMuscleGroups.first().first.ordinal
-        val backgroundImageColor = colorMuscleGroups2[muscleGroupId]
-        val imageColor = colorMuscleGroups1[muscleGroupId]
         val isInSelectedState by isInSelectMode.collectAsState(initial = false)
-        OutlinedCard(
+       Card(
             modifier = modifier.then(Modifier.combinedClickable(onClick = { onClick(exercise.uid) } ,
                 onLongClick = { onLongClick(exercise.uid) })) ,
             border = BorderStroke(1.dp , MaterialTheme.colorScheme.surface) ,
@@ -206,18 +204,24 @@ object DatabaseScreen:MainNavigation.Screens("Database Screen") {
                     verticalAlignment = Alignment.CenterVertically ,
                     horizontalArrangement = Arrangement.spacedBy(8.dp , Alignment.Start)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .wrapContentSize()
-                            .background(backgroundImageColor , cardShapes.extraLarge)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Image ,
-                            contentDescription = null ,
-                            tint = imageColor ,
-                            modifier = Modifier.padding(8.dp)
-                        )
-                    }
+                   AnimatedVisibility(visible = isSelected) {
+
+                       Box(
+                           modifier = Modifier
+                               .wrapContentSize()
+                               .background(
+                                   getPalette().current.successContainer ,
+                                   cardShapes.medium
+                               )
+                       ) {
+                           Icon(
+                               imageVector = Icons.Filled.Check ,
+                               contentDescription = null ,
+                               tint = getPalette().current.onSuccessContainer ,
+                               modifier = Modifier.padding(4.dp)
+                           )
+                       }
+                   }
                     Column(
                         modifier = Modifier
                             .fillMaxSize() ,
@@ -241,9 +245,9 @@ object DatabaseScreen:MainNavigation.Screens("Database Screen") {
                         )
                     }
                 }
-                AnimatedVisibility(visible = isInSelectedState) {
+                /*AnimatedVisibility(visible = isInSelectedState) {
                     RadioButton(selected = isSelected , onClick = { onLongClick(exercise.uid) })
-                }
+                }*/
             }
         }
     }

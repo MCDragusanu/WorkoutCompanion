@@ -8,10 +8,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -19,54 +18,92 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.workoutcompanion.R
-import com.example.workoutcompanion.common.composables.DropDownMenu
-import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseDocument
 import com.example.workoutcompanion.core.data.workout_tracking.exercise_slot.ExerciseSlot
 import com.example.workoutcompanion.core.data.workout_tracking.set_slot.SetSlot
 import com.example.workoutcompanion.core.data.workout_tracking.week.Week
 import com.example.workoutcompanion.core.data.workout_tracking.workout.WorkoutMetadata
+import com.example.workoutcompanion.core.domain.model.exercise.Exercise
 import com.example.workoutcompanion.core.presentation.main_navigations.MainNavigation
-import com.example.workoutcompanion.core.presentation.main_navigations.screens.training_program_dashboard.AddStartingPointDialogue
+import com.example.workoutcompanion.core.presentation.main_navigations.screens.training_program_dashboard.RepsAndWeightDialogue
 import com.example.workoutcompanion.ui.Typography
 import com.example.workoutcompanion.ui.cardShapes
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     operator fun invoke(viewModel : WorkoutScreenViewModel , onBackIsPressed : () -> Unit) {
 
         val metadata by viewModel.metadata.collectAsState()
         val isLoading by viewModel.isLoading.collectAsState()
+        var showColorDialogue by remember { mutableStateOf(false) }
 
-        Scaffold(
+        val scope = rememberCoroutineScope()
+        val scaffoldState =
+            rememberBottomSheetScaffoldState(bottomSheetState = SheetState(skipPartiallyExpanded = true))
+        BottomSheetScaffold(
             modifier = Modifier.fillMaxSize() ,
-            containerColor = MaterialTheme.colorScheme.background
+            scaffoldState = scaffoldState ,
+            containerColor = MaterialTheme.colorScheme.background ,
+            sheetContent = {
+                /*AddExerciseBottomSheet(
+                      modifier = Modifier.fillMaxSize() ,
+                      bottomSheetIsLoading = viewModel.bottomSheetIsLoading ,
+                      exerciseCollection = viewModel.exerciseCollection ,
+                      onSearchExercise = {text->
+                          viewModel.onSearchExercise(text)
+                      },
+
+                  )*/
+            } ,
+            sheetContainerColor = MaterialTheme.colorScheme.secondaryContainer ,
+            sheetContentColor = MaterialTheme.colorScheme.onBackground ,
+            sheetSwipeEnabled = false ,
+            sheetPeekHeight = 0.dp ,
+            sheetShape = cardShapes.extraLarge ,
         ) {
             if (!isLoading) LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(12.dp) ,
-                verticalArrangement = Arrangement.spacedBy(24.dp , Alignment.Top) ,
+                verticalArrangement = Arrangement.spacedBy(48.dp , Alignment.Top) ,
                 horizontalAlignment = Alignment.Start
             ) {
                 item {
-                    Headline(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight() ,
+                    Spacer(modifier = Modifier.size(1.dp))
+                }
+                item {
+                    WorkoutSummary(modifier = Modifier
+                        .fillMaxWidth()
+                        .height(320.dp) ,
+                        expectedLengthInMinutes = 90 ,
                         metadata = metadata ,
-                        onBackIsPressed = onBackIsPressed
-                    )
+                        currentWeek = 1 ,
+                        onBackIsPressed = onBackIsPressed ,
+                        onChangeLabelColor = {
+                            showColorDialogue = true
+                        } ,
+                        onEditWorkoutName = {
+
+                        } , onChangeDayOfWeek = {
+
+                        } , onStartWorkout = {
+
+                        })
                 }
                 item {
                     ExerciseList(
@@ -76,11 +113,24 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
                         slotList = viewModel.exerciseSlots ,
                         weeksList = viewModel.weeks ,
                         setList = viewModel.sets ,
-                        onAddProgression = {
-                            viewModel.onAddProgression(it)
+                        onAddNewSet = { reps , weight , week ->
+                            viewModel.addNewSet(reps , weight , week)
                         } ,
                         onSubmitStartingPoint = { slot , reps , weight ->
                             viewModel.onSubmittedStartingPoint(slot , reps , weight)
+                        } ,
+                        onSetChanged = {
+                            Log.d("Test" , "Set that will be changed = $it")
+                            viewModel.onSetChanged(it)
+                        } ,
+                        onDeleteExerciseSlot = {
+                            viewModel.deleteExerciseSlot(it)
+                        } ,
+                        onAddExercise = {
+                            scope.launch { scaffoldState.bottomSheetState.expand() }
+                        } ,
+                        onRemoveSet = {
+                            viewModel.removeSet(it)
                         }
                     )
                 }
@@ -92,29 +142,298 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
             }
         }
 
+        if (showColorDialogue) {
+            ColorPicker(
+                title = "Pick the color" ,
+                description = "Choose what color will be mapped to this workout" ,
+                current = Pair(Color(metadata.gradientStart) , Color(metadata.gradientEnd)) ,
+                onDismiss = { showColorDialogue = false } ,
+                onSubmitColor = {
+                    viewModel.updateColors(it)
+                }
+            )
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    private
+    @Composable
+    fun AddExerciseBottomSheet(
+        modifier : Modifier ,
+        bottomSheetIsLoading : StateFlow<Boolean> ,
+        exerciseCollection : StateFlow<List<Exercise>> ,
+        onSearchExercise : (String) -> Unit
+    ) {
+        val isLoading by bottomSheetIsLoading.collectAsState()
+        val exerciseList by exerciseCollection.collectAsState()
+        var currentText by remember { mutableStateOf("") }
+        val names = stringArrayResource(id = R.array.MuscleGroups)
+        LazyColumn(
+            modifier = modifier.padding(16.dp) ,
+            verticalArrangement = Arrangement.spacedBy(16.dp , alignment = Alignment.Top) ,
+            horizontalAlignment = Alignment.Start
+        ) {
+            item { Text(text = "Add new Exercise" , style = Typography.headlineSmall) }
+
+            item {
+                SearchBar(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight() ,
+                    query = currentText ,
+                    placeholder = {
+                        Text(text = "Search any exercise")
+                    } ,
+                    onQueryChange = {
+                        currentText = it
+                        onSearchExercise(it)
+                    } ,
+                    leadingIcon = {
+                        Icon(imageVector = Icons.Filled.Search , contentDescription = null)
+                    } ,
+                    trailingIcon = {
+                        AnimatedVisibility(visible = isLoading) {
+                            CircularProgressIndicator()
+                        }
+                    } ,
+                    onSearch = {
+                        /* currentText = it
+                        onSearchExercise(it)*/
+                    } ,
+                    active = !isLoading ,
+                    onActiveChange = {
+
+                    }
+                ) {}
+            }
+            items(exerciseList.subList(0 , minOf(5 , exerciseList.size)) , key = { it.uid }) {
+                ExerciseCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp) , it
+                )
+            }
+        }
     }
 
     @Composable
-    fun Headline(modifier : Modifier , metadata : WorkoutMetadata , onBackIsPressed : () -> Unit) {
-        Column(
+    fun ExerciseCard(modifier : Modifier , exercise : Exercise) {
+        Card(
             modifier = modifier ,
-            verticalArrangement = Arrangement.spacedBy(16.dp , Alignment.Top) ,
-            horizontalAlignment = Alignment.Start
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
         ) {
-            IconButton(onClick = onBackIsPressed) {
-                Icon(imageVector = Icons.Filled.ArrowBackIosNew , contentDescription = null)
-            }
-            Row(
-                modifier = Modifier.wrapContentSize() ,
-                horizontalArrangement = Arrangement.spacedBy(12.dp) ,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp) ,
+                horizontalAlignment = Alignment.Start ,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Surface(
-                    shape = CircleShape ,
-                    color = Color(metadata.color) ,
-                    modifier = Modifier.size(24.dp)
-                ) {}
-                Text(text = metadata.name , style = Typography.headlineLarge)
+                Text(text = exercise.exerciseName , style = Typography.labelMedium ,)
+                Text(
+                    text = if (exercise.movement.type == 0) "Compound" else "Isolation" ,
+                    color = MaterialTheme.colorScheme.onBackground.copy(0.5f)
+                )
+            }
+        }
+    }
+
+
+    private @Composable
+    fun WorkoutSummary(
+        modifier : Modifier ,
+        metadata : WorkoutMetadata ,
+        expectedLengthInMinutes : Int ,
+        currentWeek : Int ,
+        onBackIsPressed : () -> Unit ,
+        onEditWorkoutName : () -> Unit ,
+        onChangeDayOfWeek : () -> Unit ,
+        onChangeLabelColor : () -> Unit ,
+        onStartWorkout : () -> Unit
+    ) {
+        Column(
+            modifier = Modifier
+                .wrapContentHeight()
+                .fillMaxWidth() ,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+
+            Icon(
+                imageVector = Icons.Filled.ArrowBackIosNew ,
+                contentDescription = null ,
+                modifier = Modifier.clickable { onBackIsPressed() })
+
+            Text(text = "Summary" , style = Typography.headlineMedium)
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2) ,
+                modifier = modifier ,
+                userScrollEnabled = false ,
+                horizontalArrangement = Arrangement.spacedBy(4.dp) ,
+                verticalArrangement = Arrangement.spacedBy(4.dp) ,
+            ) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                brush = Brush.linearGradient(
+                                    colors = listOf(
+                                        Color(metadata.gradientStart) ,
+                                        Color(metadata.gradientEnd)
+                                    ) ,
+                                ) , shape = cardShapes.medium
+                            )
+                            .clickable { onChangeLabelColor() }
+                            .height(100.dp) , contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(12.dp) ,
+                            verticalArrangement = Arrangement.Center ,
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Text(
+                                text = "Label\nColor" ,
+                                style = Typography.headlineSmall ,
+                                color = Color.Black.copy(0.75f)
+                            )
+                        }
+                    }
+                }
+                item {
+                    Card(
+                        modifier = Modifier
+                            .clickable {
+                                onEditWorkoutName()
+                            }
+                            .height(100.dp) ,
+                        shape = cardShapes.medium ,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .fillMaxSize() ,
+                            verticalArrangement = Arrangement.spacedBy(12.dp) ,
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Text(
+                                text = "Name" ,
+                                style = Typography.labelSmall ,
+                                color = MaterialTheme.colorScheme.onBackground.copy(0.5f)
+                            )
+                            Text(text = metadata.name , style = Typography.headlineSmall)
+                        }
+                    }
+                }
+                item {
+                    Card(
+                        modifier = Modifier.height(100.dp) ,
+                        shape = cardShapes.medium ,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .fillMaxSize() ,
+                            verticalArrangement = Arrangement.spacedBy(12.dp) ,
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Text(
+                                text = "Est. Workout Duration" ,
+                                style = Typography.labelSmall ,
+                                color = MaterialTheme.colorScheme.onBackground.copy(0.5f)
+                            )
+                            val hours = expectedLengthInMinutes / 60
+                            val remaining = expectedLengthInMinutes - hours * 60
+                            val st =
+                                if (hours == 0) "$remaining Min" else "${hours}h : ${remaining} Min"
+                            Text(text = st , style = Typography.headlineMedium)
+                        }
+                    }
+                }
+                item {
+                    Card(
+                        modifier = Modifier
+                            .clickable {
+                                onChangeDayOfWeek()
+                            }
+                            .height(100.dp) ,
+                        shape = cardShapes.medium ,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .fillMaxSize() ,
+                            verticalArrangement = Arrangement.spacedBy(12.dp) ,
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Text(
+                                text = "Day of Week" ,
+                                style = Typography.labelSmall ,
+                                color = MaterialTheme.colorScheme.onBackground.copy(0.5f)
+                            )
+                            Text(
+                                text = if (metadata.dayOfWeek > 7) "Not set" else stringArrayResource(
+                                    id = R.array.DaysOfWeek
+                                )[metadata.dayOfWeek] ,
+                                style = Typography.headlineSmall
+                            )
+                        }
+                    }
+                }
+                item {
+                    Card(
+                        modifier = Modifier.height(100.dp) ,
+                        shape = cardShapes.medium ,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .fillMaxSize() ,
+                            verticalArrangement = Arrangement.spacedBy(12.dp) ,
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Text(
+                                text = "Current Progress" ,
+                                style = Typography.labelSmall ,
+                                color = MaterialTheme.colorScheme.onBackground.copy(0.5f)
+                            )
+                            Text(
+                                text = "${currentWeek + 1} / ${metadata.programLengthInWeeks} weeks" ,
+                                style = Typography.headlineSmall
+                            )
+                        }
+                    }
+                }
+                item {
+                    Card(
+                        modifier = Modifier
+                            .clickable {
+                                onStartWorkout()
+                            }
+                            .height(100.dp) ,
+                        shape = cardShapes.medium ,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .fillMaxSize() ,
+                            verticalArrangement = Arrangement.SpaceEvenly ,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(text = "Start Workout" , style = Typography.labelMedium)
+                            Icon(
+                                imageVector = Icons.Filled.PlayCircleFilled ,
+                                contentDescription = null
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -123,39 +442,137 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
     @Composable
     fun ExerciseList(
         modifier : Modifier ,
-        slotList : Flow<List<ExerciseSlot>> ,
-        weeksList : Flow<List<Week>> ,
-        setList : Flow<List<SetSlot>> ,
-        onAddProgression : (ExerciseSlot) -> Unit ,
-        onSubmitStartingPoint : (ExerciseSlot , Int , Double) -> Unit
+        slotList : StateFlow<List<ExerciseSlot>> ,
+        weeksList : StateFlow<List<Week>> ,
+        setList : StateFlow<List<SetSlot>> ,
+        onAddNewSet : (Int , Double , Week) -> Unit ,
+        onSubmitStartingPoint : (ExerciseSlot , Int , Double) -> Unit ,
+        onDeleteExerciseSlot : (ExerciseSlot) -> Unit ,
+        onSetChanged : (SetSlot) -> Unit ,
+        onAddExercise : () -> Unit ,
+        onRemoveSet : (SetSlot) -> Unit
     ) {
-        val allWeeks by weeksList.collectAsState(initial = emptyList())
-        val slots by slotList.collectAsState(emptyList())
-        val sets by setList.collectAsState(initial = emptyList())
+        val allWeeks by weeksList.collectAsState()
+        val slots by slotList.collectAsState()
+        val sets by setList.collectAsState()
         Column(
             modifier = modifier ,
             verticalArrangement = Arrangement.spacedBy(4.dp , Alignment.Top) ,
             horizontalAlignment = Alignment.Start
         ) {
-            slots.onEach { slot ->
+            ExerciseListHeadline(
+                modifier = Modifier.fillMaxWidth() ,
+                onChangeOrder = { } ,
+                onAddExercise = onAddExercise)
+            Spacer(modifier = Modifier.size(24.dp))
+            if (slots.isNotEmpty()) {
+                slots.onEach { slot ->
+                    val slotWeeks = allWeeks.filter { it.exerciseSlotUid == slot.uid }
+                    val currentSets = sets.filter { it.weekUid in slotWeeks.map { it.uid } }.sortedBy { it.weekUid }
+                    ExerciseCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .padding(16.dp) ,
+                        exercise = slot ,
+                        weeks = slotWeeks ,
+                        sets = currentSets ,
+                        onAddSet = onAddNewSet ,
+                        onSubmitStartingPoint = onSubmitStartingPoint ,
+                        onSetChanged = onSetChanged ,
+                        onDeleteExerciseSlot = onDeleteExerciseSlot ,
+                        onRemoveSet = onRemoveSet
+                    )
 
-                val slotWeeks = allWeeks.filter { it.exerciseSlotUid == slot.uid }
-                val currentSets = sets.filter { it.weekUid in slotWeeks.map { it.uid } }
-                ExerciseCard(
+                }
+            } else {
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .wrapContentHeight()
-                        .padding(16.dp) ,
-                    exercise = slot ,
-                    weeks = slotWeeks ,
-                    sets = currentSets ,
-                    onAddWeek = onAddProgression ,
-                    onSubmitStartingPoint = onSubmitStartingPoint
-                )
+                        .fillMaxSize(0.5f)
+                        .padding(vertical = 16.dp) ,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(12.dp) ,
+                        horizontalAlignment = Alignment.CenterHorizontally ,
+                        verticalArrangement = Arrangement.spacedBy(
+                            16.dp ,
+                            Alignment.CenterVertically
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.FormatListBulleted ,
+                            contentDescription = null ,
+                            modifier = Modifier.size(150.dp)
+                        )
+                        Text(
+                            text = "It seems you don't have any exercises added to this workout!" ,
+                            style = Typography.bodyLarge ,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "Start adding now" ,
+                            color = MaterialTheme.colorScheme.secondary ,
+                            style = Typography.labelMedium ,
+                            modifier = Modifier.clickable { onAddExercise() }
+                        )
+                    }
+                }
             }
         }
     }
 
+    @Composable
+    fun ExerciseListHeadline(
+        modifier : Modifier ,
+        onChangeOrder : () -> Unit ,
+        onAddExercise : () -> Unit
+    ) {
+        Column(
+            modifier = modifier ,
+            verticalArrangement = Arrangement.spacedBy(8.dp , Alignment.Top) ,
+            horizontalAlignment = Alignment.Start
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight() ,
+                horizontalArrangement = Arrangement.SpaceBetween ,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Exercise\nComposition" , style = Typography.headlineMedium)
+                Row(
+                    modifier = Modifier.wrapContentSize() ,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp) ,
+                    Alignment.CenterVertically
+                ) {
+                    Surface(
+                        modifier = Modifier.size(32.dp) ,
+                        color = MaterialTheme.colorScheme.surface ,
+                        contentColor = MaterialTheme.colorScheme.primary ,
+                        shape = cardShapes.small
+                    ) {
+                        IconButton(onClick = { onChangeOrder() }) {
+                            Icon(imageVector = Icons.Filled.Reorder , contentDescription = null)
+                        }
+                    }
+                    Surface(
+                        modifier = Modifier.size(32.dp) ,
+                        shape = cardShapes.small ,
+                        color = MaterialTheme.colorScheme.surface ,
+                        contentColor = MaterialTheme.colorScheme.primary
+                    ) {
+                        IconButton(onClick = { onAddExercise() }) {
+                            Icon(imageVector = Icons.Filled.Add , contentDescription = null)
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     @Composable
     fun ExerciseCard(
@@ -163,16 +580,23 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
         exercise : ExerciseSlot ,
         weeks : List<Week> ,
         sets : List<SetSlot> ,
-        onAddWeek : (ExerciseSlot) -> Unit ,
-        onSubmitStartingPoint : (ExerciseSlot , Int , Double) -> Unit
+        onAddSet : (Int , Double , Week) -> Unit ,
+        onSubmitStartingPoint : (ExerciseSlot , Int , Double) -> Unit ,
+        onSetChanged : (SetSlot) -> Unit ,
+        onDeleteExerciseSlot : (ExerciseSlot) -> Unit ,
+        onRemoveSet : (SetSlot) -> Unit
     ) {
-        Log.d("Test" , sets.size.toString())
+
 
         var currentWeek by remember { mutableStateOf(weeks.lastOrNull()) }
         var showDialogue by remember { mutableStateOf(false) }
-        Card(modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight() , colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)){
+        var currentSets = if(currentWeek == null) emptyList() else sets.filter { it.weekUid == currentWeek!!.uid }.sortedBy { it.index }
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight() ,
+            colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        ) {
             Column(
                 modifier = modifier ,
                 verticalArrangement = Arrangement.spacedBy(16.dp , Alignment.CenterVertically) ,
@@ -181,16 +605,16 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
                 ExerciseHeadline(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .wrapContentHeight() , slot = exercise,
+                        .wrapContentHeight() , slot = exercise ,
                     showChart = {
 
-                    },
+                    } ,
                     replaceExercise = {
 
-                    },
+                    } ,
                     deleteExercise = {
-
-                    },
+                        onDeleteExerciseSlot(it)
+                    } ,
                     seeExerciseDocument = {
 
                     }
@@ -213,23 +637,24 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
                     }
                 }
 
-                Column(){
+                Column() {
                     if (weeks.isNotEmpty()) {
                         WeekSlider(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .wrapContentHeight() ,
+                                .height(55.dp) ,
                             weeks = weeks ,
                             currentWeek = currentWeek ,
                             onWeekClicked = {
                                 currentWeek = it
                             } ,
-                            onAddProgression = {
-                                onAddWeek(exercise)
-                            }
+                            onAddSet = { reps , weight , week ->
+                                onAddSet(reps , weight , week)
+                            } ,
+                            isBodyWeight = exercise.isBodyWeight
                         )
                     }
-                    AnimatedContent(targetState = currentWeek) {
+                    AnimatedContent(targetState = currentSets) {
                         currentWeek?.let { week ->
                             Column(
                                 modifier = Modifier
@@ -238,16 +663,21 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
                                 horizontalAlignment = Alignment.Start ,
                                 verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                val currentSets = sets.filter { it.weekUid == week.uid }
-                                if (currentSets.isEmpty()) {
 
+                                if (it.isEmpty()) {
+                                           Text(text = "No sets found")
                                 } else {
-                                    currentSets.onEach {
+                                    it.onEach {
                                         SetCard(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .wrapContentHeight() ,
-                                            setSlot = it
+                                            setSlot = it ,
+                                            onSetChanged = onSetChanged ,
+                                            isBodyWeight = exercise.isBodyWeight ,
+                                            onRemoveSet = { toBeRemoved ->
+                                                onRemoveSet(toBeRemoved)
+                                            }
                                         )
                                     }
                                 }
@@ -258,40 +688,141 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
             }
         }
         if (showDialogue) {
-            AddStartingPointDialogue(onDismiss = { showDialogue = false } ,
-                exerciseIsBodyWeight = exercise.isBodyWeight,
+            RepsAndWeightDialogue(onDismiss = { showDialogue = false } ,
+                exerciseIsBodyWeight = exercise.isBodyWeight ,
                 onSubmit = { reps , weight ->
                     onSubmitStartingPoint(exercise , reps , weight)
                     showDialogue = false
-                })
+                } , title = R.string.enter_starting_point_message ,
+                caption = R.string.no_previous_experience
+            )
         }
     }
 
+    @OptIn(ExperimentalLayoutApi::class)
     @Composable
-    fun SetCard(modifier : Modifier , setSlot : SetSlot ){
-        Row(
-            modifier = modifier,
-            verticalAlignment = Alignment.CenterVertically ,
+    fun SetCard(
+        modifier : Modifier ,
+        setSlot : SetSlot ,
+        onSetChanged : (SetSlot) -> Unit ,
+        isBodyWeight : Boolean ,
+        onRemoveSet : (SetSlot) -> Unit
+    ) {
+
+        //TODO if !isBodyWeight display the buttons underneath
+
+        var isInEditMode by remember { mutableStateOf(false) }
+        var currentReps by remember { mutableStateOf(setSlot.reps.toString()) }
+        var setIsDeleted by remember { mutableStateOf(false)}
+        var currentWeight by remember {
+            mutableStateOf(
+                String.format(
+                    "%.1f" ,
+                    setSlot.weightInKgs
+                )
+            )
+        }
+        val focusRequester = remember { FocusRequester() }
+        val focusManager = LocalFocusManager.current
+
+       if(!setIsDeleted)
+        FlowRow(
+            modifier = modifier ,
+            verticalArrangement =Arrangement.spacedBy(8.dp ,Alignment.CenterVertically),
             horizontalArrangement = Arrangement.spacedBy(
                 24.dp ,
                 Alignment.Start
             )
         ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .weight(1f , true) ,
+                horizontalArrangement = Arrangement.spacedBy(8.dp , Alignment.Start) ,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextBox(
+                    modifier = Modifier
+                        .width(75.dp)
+                        .height(35.dp)
+                        .focusRequester(focusRequester) ,
+                    suffix = "Reps" ,
+                    text = currentReps ,
+                    onValueChanged = {
+                        currentReps = it
+                        isInEditMode = true
+                    })
+                if (!isBodyWeight)
+                    Text("X" , color = MaterialTheme.colorScheme.onBackground.copy(0.5f))
+                if (!isBodyWeight) TextBox(
+                    modifier = Modifier
+                        .width(75.dp)
+                        .height(35.dp)
+                        .focusRequester(focusRequester) ,
+                    suffix = "Kgs" ,
+                    text = currentWeight ,
+                    onValueChanged = {
+                        currentWeight = it
+                        isInEditMode = true
+                    })
+            }
 
-            TextBox(
-                modifier = Modifier.width(75.dp).height(35.dp) ,
-                suffix = "Reps" ,
-                text = setSlot.reps.toString() ,
-                onValueChanged = {
+            AnimatedVisibility(visible = isInEditMode) {
+                Row(
+                    modifier = Modifier
+                        .wrapContentHeight()
+                        .weight(1f , true) ,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp) ,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = {
+                        currentReps = setSlot.reps.toString()
+                        currentWeight = String.format(
+                            "%.1f" ,
+                            setSlot.weightInKgs
+                        )
+                        isInEditMode = false
+                        focusManager.clearFocus()
+                    }) {
+                        Icon(imageVector = Icons.Filled.Close , contentDescription = null)
+                    }
+                    IconButton(onClick = {
+                        onRemoveSet(setSlot)
+                        focusManager.clearFocus()
+                        isInEditMode = false
+                    }) {
+                        Icon(imageVector = Icons.Filled.DeleteForever , contentDescription = null)
+                    }
+                    IconButton(onClick = {
+                        val newReps = try {
+                            val newAmount = currentReps.toInt()
+                            if (newAmount >= 0) newAmount else null
+                        } catch (e : Exception) {
+                            null
+                        }
 
+                        val weight = try {
+                            val newAmount = currentWeight.toDouble()
+                            if (newAmount >= 0.000) newAmount else null
+                        } catch (e : Exception) {
+                            null
+                        }
+
+                        if (newReps != null && ((weight != null && !isBodyWeight) || isBodyWeight)) {
+                            onSetChanged(
+                                setSlot.copy(
+                                    reps = newReps ,
+                                    weightInKgs = weight ?: setSlot.weightInKgs
+                                ).apply { this.uid = setSlot.uid })
+                            isInEditMode = false
+                            focusManager.clearFocus()
+                        }
+                    }) {
+                        Icon(imageVector = Icons.Filled.Check , contentDescription = null)
+                    }
                 }
-            )
-            Text("X")
-            TextBox(
-                modifier = Modifier.width(75.dp).height(35.dp) ,
-                suffix = "Kgs" ,
-                text = String.format("%.1f" , setSlot.weightInKgs) ,
-                onValueChanged = {})
+            }
         }
     }
 
@@ -303,8 +834,11 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
         weeks : List<Week> ,
         currentWeek : Week? ,
         onWeekClicked : (Week) -> Unit ,
-        onAddProgression : () -> Unit
+        onAddSet : (Int , Double , Week , ) -> Unit ,
+        isBodyWeight : Boolean ,
     ) {
+        var showDialogue by remember { mutableStateOf(false) }
+        //TODO add a piramid warmup feature, in the exercise progression schema add some parameters that describe the grouth of the warmup
         LazyRow(
             modifier = modifier ,
             horizontalArrangement = Arrangement.spacedBy(8.dp) ,
@@ -312,36 +846,60 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
         ) {
             items(if (weeks.size > 5) weeks.takeLast(5) else weeks , key = { it.uid }) {
                 FilterChip(
-                    modifier = Modifier.width(75.dp).height(35.dp),
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .height(35.dp) ,
                     selected = if (currentWeek != null) currentWeek.uid == it.uid else false ,
                     onClick = {
                         onWeekClicked(it)
                     } ,
                     label = {
                         Text(
-                            "Week ${it.index + 1}" ,
+                            if (currentWeek != null && it.uid == currentWeek.uid) "Current Week" else "Week ${it.index + 1}" ,
                             fontSize = 10.sp ,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     } ,
-                    colors = FilterChipDefaults.filterChipColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow , selectedContainerColor = MaterialTheme.colorScheme.primary)
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow ,
+                        selectedContainerColor = MaterialTheme.colorScheme.primary
+                    )
                 )
             }
-
-            item {
-                AssistChip(onClick = onAddProgression , label = {
-                    Icon(imageVector = Icons.Filled.Add , contentDescription = null)
-                })
-            }
+            if (currentWeek != null)
+                item {
+                    AssistChip(onClick = { showDialogue = true } , label = {
+                        Text("Add Set" , fontSize = 10.sp)
+                    })
+                }
+        }
+        if (showDialogue) {
+            RepsAndWeightDialogue(
+                title = R.string.add_new_set ,
+                caption = null ,
+                onDismiss = { showDialogue = false } ,
+                onSubmit = { currentReps , currentWeight ->
+                    currentWeek?.let {
+                        onAddSet(currentReps , currentWeight , it)
+                    }
+                } ,
+                exerciseIsBodyWeight = isBodyWeight
+            )
         }
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
+
     @Composable
-    fun ExerciseHeadline(modifier : Modifier , slot : ExerciseSlot , seeExerciseDocument : (ExerciseSlot)->Unit, showChart:(ExerciseSlot)->Unit , replaceExercise:(ExerciseSlot)->Unit , deleteExercise:(ExerciseSlot)->Unit) {
+    fun ExerciseHeadline(
+        modifier : Modifier ,
+        slot : ExerciseSlot ,
+        seeExerciseDocument : (ExerciseSlot) -> Unit ,
+        showChart : (ExerciseSlot) -> Unit ,
+        replaceExercise : (ExerciseSlot) -> Unit ,
+        deleteExercise : (ExerciseSlot) -> Unit
+    ) {
 
         var showActions by remember { mutableStateOf(false) }
-        var tooltipState = rememberRichTooltipState(isPersistent = true)
         val muscleGroups = try {
             slot.muscleGroups.split("/").filter { it.isNotBlank() }.map { it.toInt() }
         } catch (e : Exception) {
@@ -381,93 +939,56 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
             ) {
                 Text(
                     text = slot.exerciseName ,
-                    style = Typography.labelLarge ,
-                    textAlign = TextAlign.Justify
+                    style = Typography.labelMedium ,
+                    textAlign = TextAlign.Justify ,
+                    color = MaterialTheme.colorScheme.onBackground.copy(0.75f)
                 )
                 Text(
                     text = muscleGroupSt ,
-                    style = Typography.bodySmall ,
-                    color = MaterialTheme.colorScheme.onBackground.copy(0.75f)
+                    style = Typography.labelSmall ,
+                    color = MaterialTheme.colorScheme.onBackground.copy(0.25f)
                 )
             }
-            RichTooltipBox(
-                text = {
-                    Column() {
-                        val actions = listOf(
-                            Triple("See Exercise Document" , Icons.Filled.ArrowCircleRight , seeExerciseDocument),
-                            Triple("See Evolution" , Icons.Filled.MultilineChart , showChart) ,
-                            Triple(
-                                "Replace Exercise" ,
-                                Icons.Filled.FindReplace ,
-                                replaceExercise
-                            ) ,
-                            Triple("Remove Exercise" , Icons.Filled.DeleteForever , deleteExercise),
-                            Triple("Close" , Icons.Filled.Close) { _ :ExerciseSlot-> showActions = false }
-                        )
-                        actions.onEach {
-                            Row(
-                                modifier = Modifier
-                                    .wrapContentSize()
-                                    .padding(8.dp)
-                                    .clickable {
-                                        it.third.invoke(slot)
-                                        showActions = false
-                                    } ,
-                                verticalAlignment = Alignment.CenterVertically ,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(text = it.first , fontSize = 12.sp, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                                Icon(
-                                    imageVector = it.second ,
-                                    contentDescription = null ,
-                                    tint = if (it.third == deleteExercise || it.third == actions.last().third) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary ,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-                    }
+            Box(
+                modifier = Modifier.wrapContentHeight() ,
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.MoreVert ,
+                    contentDescription = null ,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .padding(4.dp)
+                        .clickable { showActions = true }
+                )
+                DropdownMenu(expanded = showActions , onDismissRequest = { showActions = false }) {
+                    val actions = listOf(
+                        Pair("See Exercise Document" , seeExerciseDocument) ,
+                        Pair("See Evolution" , showChart) ,
+                        Pair(
+                            "Replace Exercise" ,
+                            replaceExercise
+                        ) ,
+                        Pair("Remove Exercise" , deleteExercise) ,
+                        Pair("Close" ,) { _ : ExerciseSlot -> showActions = false }
+                    )
+                    actions.onEach {
+                        DropdownMenuItem(text = {
+                            Text(
+                                text = it.first ,
+                                style = Typography.bodySmall
+                            )
+                        } ,
+                            onClick = {
+                                it.second.invoke(slot)
+                                showActions = false
+                            })
 
-                } ,
-                tooltipState = tooltipState ,
-                focusable = false ,
-                colors = TooltipDefaults.richTooltipColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer ,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    actionContentColor = MaterialTheme.colorScheme.secondary
-                ) ,
-                title = {
-                    Text(
-                        "Actions" ,
-                        style = Typography.headlineSmall ,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                }) {
-                Box(
-                    modifier = Modifier.wrapContentHeight() ,
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Settings ,
-                        contentDescription = null ,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .padding(4.dp)
-                            .clickable { showActions = true }
-                    )
+                    }
                 }
             }
         }
-        LaunchedEffect(key1 = showActions) {
-            if (showActions) {
-                tooltipState.show()
-            } else {
-                tooltipState.dismiss()
-
-            }
-        }
     }
-
 
 
     @Composable
@@ -478,9 +999,6 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
         onValueChanged : (String) -> Unit ,
     ) {
         var currentText by remember { mutableStateOf(text) }
-
-
-
 
         Row(
             modifier = Modifier.wrapContentSize() ,

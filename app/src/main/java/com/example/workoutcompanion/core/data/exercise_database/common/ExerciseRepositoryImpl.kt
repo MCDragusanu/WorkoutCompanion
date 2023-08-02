@@ -4,7 +4,7 @@ import com.example.workoutcompanion.core.data.exercise_database.local.LocalExerc
 import javax.inject.Inject
 
 
-//TODO refactor auth module and user module to use annotations etc
+
  class ExerciseRepositoryImpl @Inject constructor(
     private val cloudDataSource: ExerciseDataSource ,
     private val localRepository: LocalExerciseRepository

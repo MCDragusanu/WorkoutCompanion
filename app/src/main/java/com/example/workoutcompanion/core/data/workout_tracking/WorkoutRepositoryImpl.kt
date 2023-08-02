@@ -115,7 +115,7 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
     }
 
     override suspend fun updateSet(newSet : SetSlot) {
-        Log.d("Test" , "set will be updated")
+        Log.d("Test" , "set ${newSet.uid} will be updated")
         try{
             setSlotDao.updateSetSlot(
                 newSet.weightInKgs ,
@@ -139,5 +139,21 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
             e.printStackTrace()
             null
         }
+    }
+
+    override suspend fun deleteExerciseSlot(slot : ExerciseSlot) {
+        weekDao.getWeeksForSlotInASCOrder(slot.uid).onEach {
+            setSlotDao.deleteAllSetsForWeek(it.uid)
+            weekDao.deleteWeek(it)
+        }
+        exerciseSlotDao.deleteSlot(slot)
+    }
+
+    override suspend fun updateMetadata(value : WorkoutMetadata) {
+        workoutMetadataDao.updateWorkout(value)
+    }
+
+    override suspend fun removeSet(set : SetSlot) {
+        setSlotDao.deleteSet(set)
     }
 }

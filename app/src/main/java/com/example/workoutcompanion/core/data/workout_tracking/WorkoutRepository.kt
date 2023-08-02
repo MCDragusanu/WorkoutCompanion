@@ -23,6 +23,9 @@ interface WorkoutRepository {
    suspend fun updateSet(newSet : SetSlot)
    suspend fun removeProgression(week : Week)
    suspend fun getWorkoutByUid(_workoutUid : Long) : WorkoutMetadata?
+   suspend  fun deleteExerciseSlot(slot : ExerciseSlot)
+   suspend fun updateMetadata(value : WorkoutMetadata)
+  suspend  fun removeSet(set : SetSlot)
 
     /*suspend fun addExerciseSlot(slot : ExerciseSlot) : Result<Nothing?>
 

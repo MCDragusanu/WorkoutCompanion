@@ -1,9 +1,9 @@
 package com.example.workoutcompanion.core.presentation.main_navigations.screens.training_program_dashboard
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -11,13 +11,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.workoutcompanion.R
 import com.example.workoutcompanion.common.composables.AnimatedPrimaryButton
+import com.example.workoutcompanion.ui.Typography
 
 @Composable
-fun AddStartingPointDialogue(onDismiss:()->Unit , onSubmit:(Int , Double)->Unit , exerciseIsBodyWeight:Boolean) {
+fun RepsAndWeightDialogue(@StringRes title:Int, @StringRes caption:Int? ,onDismiss:()->Unit , onSubmit:(Int , Double)->Unit , exerciseIsBodyWeight:Boolean) {
     var repsString by remember { mutableStateOf("") }
     var weightString by remember { mutableStateOf("") }
     var repsErrorCode by remember { mutableStateOf<Int?>(null) }
@@ -30,16 +32,27 @@ fun AddStartingPointDialogue(onDismiss:()->Unit , onSubmit:(Int , Double)->Unit 
                 .background(MaterialTheme.colorScheme.surface) , contentAlignment = Alignment.Center
         ) {
             Column(
-                modifier = Modifier.padding(16.dp) ,
-                verticalArrangement = Arrangement.spacedBy(24.dp) ,
+                modifier = Modifier.padding(24.dp) ,
+                verticalArrangement = Arrangement.spacedBy(36.dp) ,
                 horizontalAlignment = Alignment.CenterHorizontally ,
             ) {
-                Text(text = stringResource(R.string.enter_starting_point_message))
+                Text(
+                    text = stringResource(title) ,
+                    style = Typography.headlineMedium,
+                    textAlign = TextAlign.Start
+                )
+                if(caption!=null)
+                Text(
+                    text = stringResource(caption) ,
+                    style = Typography.labelSmall ,
+                    color = MaterialTheme.colorScheme.onBackground.copy(0.75f),
+                    textAlign = TextAlign.Start
+                )
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .wrapContentHeight() ,
-                    horizontalArrangement = Arrangement.SpaceBetween ,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp) ,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(
@@ -87,7 +100,7 @@ fun AddStartingPointDialogue(onDismiss:()->Unit , onSubmit:(Int , Double)->Unit 
                                 suffix = {
                                     Text(text = "Kgs")
                                 } , modifier = Modifier.weight(1f , true))
-                            AnimatedVisibility(visible = weightErrorCode!=null) {
+                            AnimatedVisibility(visible = weightErrorCode != null) {
                                 weightErrorCode?.let {
                                     Text(
                                         text = stringResource(id = it) ,
@@ -114,10 +127,17 @@ fun AddStartingPointDialogue(onDismiss:()->Unit , onSubmit:(Int , Double)->Unit 
                         weightErrorCode = R.string.error_invalid_decimal
                         null
                     }
-                    if (repAmount != null && weightAmount != null) {
+                    if(!exerciseIsBodyWeight) {
+                        if (repAmount != null && weightAmount != null) {
+                            onSubmit(
+                                repAmount ,
+                                if (!exerciseIsBodyWeight) weightAmount else -1.0 ,
+                            )
+                        }
+                    } else if(repAmount!=null){
                         onSubmit(
                             repAmount ,
-                            if (!exerciseIsBodyWeight) weightAmount else -1.0 ,
+                            -1.0 ,
                         )
                     }
                     onDismiss()

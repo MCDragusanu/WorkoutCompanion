@@ -1,10 +1,13 @@
 package com.example.workoutcompanion.core.presentation.main_navigations.workout_screen
 
 import android.util.Log
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.workoutcompanion.common.extentions.replace
 import com.example.workoutcompanion.core.data.di.Production
 import com.example.workoutcompanion.core.data.di.Testing
+import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseRepository
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
 import com.example.workoutcompanion.core.data.user_database.common.UserProfile
 import com.example.workoutcompanion.core.data.user_database.common.guestProfile
@@ -30,7 +33,17 @@ import javax.inject.Inject
 class WorkoutScreenViewModel @Inject constructor(private val progressionManager:ProgressionOverloadManager ,
                                                  private val workoutRepository : WorkoutRepository ,
                                                  @Testing
-                                                 private val userRepository  : ProfileRepository):ViewModel() {
+                                                 private val userRepository  : ProfileRepository,
+                                                 @Testing
+                                                 private val exerciseRepository : ExerciseRepository,
+                                                 ):ViewModel() {
+
+    private val _bottomSheetIsLoading = MutableStateFlow(true)
+    val bottomSheetIsLoading = _bottomSheetIsLoading.asStateFlow()
+
+    private val _exerciseCollection = MutableStateFlow<List<Exercise>>(emptyList())
+    val exerciseCollection = _exerciseCollection.asStateFlow()
+
     private var _workoutUid : Long = -1
 
     private val _trainingParameters = TrainingParameters(
@@ -49,22 +62,23 @@ class WorkoutScreenViewModel @Inject constructor(private val progressionManager:
             "Place holder" ,
             "" ,
             0 ,
-            0
+            0 ,
+            0 ,
+            dayOfWeek = 0
         )
     )
     val metadata = _metadata.asStateFlow()
 
     private val _exerciseSlots = MutableStateFlow<List<ExerciseSlot>>(emptyList())
     val exerciseSlots = _exerciseSlots.asStateFlow()
-        .onEach { Log.d("Test" , "new ${it.size} exercise slots sent from viewModel") }
+
 
     private val _weeks = MutableStateFlow<List<Week>>(emptyList())
     val weeks =
-        _weeks.asStateFlow().onEach { Log.d("Test" , "new ${it.size} weeks sent from viewModel") }
+        _weeks.asStateFlow()
 
     private val _sets = MutableStateFlow<List<SetSlot>>(emptyList())
     val sets = _sets.asStateFlow()
-        .onEach { Log.d("Test" , "new ${it.size} set slots sent from viewModel") }
 
 
     private var _profile : UserProfile? = null
@@ -93,7 +107,7 @@ class WorkoutScreenViewModel @Inject constructor(private val progressionManager:
 
     fun retrieveWorkout(workoutUid : Long) {
         _workoutUid = workoutUid
-        viewModelScope.launch(Dispatchers.IO){
+        viewModelScope.launch(Dispatchers.IO) {
             val metadatata = workoutRepository.getWorkoutByUid(_workoutUid)
             if (metadatata == null) {
                 Log.d("Test" , "No workout found")
@@ -109,7 +123,8 @@ class WorkoutScreenViewModel @Inject constructor(private val progressionManager:
             }
             val setList = mutableListOf<SetSlot>()
             weeks.onEach {
-                setList += workoutRepository.getSetsForWeek(it)
+                val sets = workoutRepository.getSetsForWeek(it)
+                setList += sets
             }
 
             _metadata.update { metadatata }
@@ -191,6 +206,79 @@ class WorkoutScreenViewModel @Inject constructor(private val progressionManager:
             _weeks.update { it + startingPoint }
 
 
+        }
+    }
+
+    fun onSetChanged(set : SetSlot) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val updated = _sets.value.replace(set) {
+                it.uid == set.uid
+            }
+            _sets.update { updated }
+            workoutRepository.updateSet(set)
+        }
+    }
+
+    fun deleteExerciseSlot(slot : ExerciseSlot) {
+        viewModelScope.launch {
+
+            _exerciseSlots.update {
+                it.filter { it.uid != slot.uid }
+            }
+            workoutRepository.deleteExerciseSlot(slot)
+        }
+    }
+
+    fun updateColors(pair : Pair<Color , Color>) {
+        viewModelScope.launch {
+            _metadata.update {
+                it.copy(
+                    gradientStart = pair.first.hashCode() ,
+                    gradientEnd = pair.second.hashCode()
+                )
+            }
+            workoutRepository.updateMetadata(_metadata.value)
+        }
+    }
+
+    fun updateMetadata(metadata : WorkoutMetadata) {
+        viewModelScope.launch {
+            _metadata.update { metadata }
+            workoutRepository.updateMetadata(metadata)
+        }
+    }
+
+    fun onSearchExercise(text : String) {
+        viewModelScope.launch {
+            _bottomSheetIsLoading.update { true }
+            exerciseRepository.getCachedDatabase().onSuccess { result ->
+                _exerciseCollection.update {
+                    result.filter { it.exerciseName.contains(text , true) }.map { it.toExercise() }
+                }
+                _bottomSheetIsLoading.update { false }
+            }.onFailure {
+                Log.d("Test" , it.stackTraceToString())
+            }
+        }
+    }
+
+    fun removeSet(set : SetSlot) {
+        viewModelScope.launch(Dispatchers.IO) {
+
+
+            val newList = _sets.value.minus(set)
+
+            _sets.update { newList }
+            workoutRepository.removeSet(set)
+        }
+    }
+
+    fun addNewSet(reps : Int , weight : Double , week : Week) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val setIndex = _sets.value.count { it.weekUid == week.uid }
+            val set = SetSlot(weightInKgs = weight , reps = reps , week.uid , setIndex)
+            _sets.update { it + set }
+            workoutRepository.addSets(sets = arrayOf(set))
         }
     }
 }

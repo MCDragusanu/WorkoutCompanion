@@ -16,7 +16,7 @@ class LocalProfileRepositoryTestImpl @Inject constructor(@Testing private val da
         return try {
 
             //dao.updateProfile(userProfile = newProfile)
-            Log.d("Test" , "profile has been updated with uid= ${guestProfile.uid}")
+
             Result.success(null)
         }catch (e:Exception){
             Result.failure(e)
@@ -26,7 +26,6 @@ class LocalProfileRepositoryTestImpl @Inject constructor(@Testing private val da
     override suspend fun deleteProfile(userUid : String) : Result<Nothing?> {
         return try {
           //  dao.deleteProfile(userUid)
-            Log.d("Test" , "profile has been deleted with uid= $userUid")
             Result.success(null)
         }catch (e:Exception){
             Result.failure(e)

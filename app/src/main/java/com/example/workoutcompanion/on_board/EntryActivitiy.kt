@@ -5,15 +5,18 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.compose.WorkoutCompanionTheme
+import com.example.workoutcompanion.common.composables.BarChart
 import com.example.workoutcompanion.core.presentation.MainActivity
 import com.example.workoutcompanion.on_board.navigation.EntryNavigation
 import com.example.workoutcompanion.workout_designer.WorkoutDesignActivity
@@ -28,7 +31,8 @@ class EntryActivitiy : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.CREATED){
-                FirebaseAuth.getInstance().currentUser?.let {
+               // FirebaseAuth.getInstance().signOut()
+                    FirebaseAuth.getInstance().currentUser?.let {
                     startMainActivity(it.uid)
                 }
             }
