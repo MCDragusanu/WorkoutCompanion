@@ -1,0 +1,13 @@
+    //TODO see what's the cause the weird bug that shows many sets in the ui layer when editing the sets
+    //TODO update the metadata inside the training program ---DONE----
+    //TODO implement the change date dialogue
+    //TODO implement the persistance of the training parameters ---DONE---
+    //TODO IDEA----> create in the home screen a stock / crypto like chart to show the evolution of one rep maxes for exercise
+    //TODO implement the lenght of workout estimation
+    //TODO implement the replace exercise feature
+    //TODO implement the dashboard for training parameters
+    //TODO implement the pie chart for volume
+    //TODO add tooltips in each screen to descibe hidden gestures inside the app
+    //TODO convert main navigation to viewPager
+    //TOOO imlement delete feature on the workouts
+    //TODO support multiple progression schemas (add on the slot a key for the schema)

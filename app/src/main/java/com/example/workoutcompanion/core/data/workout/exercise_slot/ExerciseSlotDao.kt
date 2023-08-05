@@ -1,4 +1,4 @@
-package com.example.workoutcompanion.core.data.workout_tracking.exercise_slot
+package com.example.workoutcompanion.core.data.workout.exercise_slot
 
 import androidx.room.*
 

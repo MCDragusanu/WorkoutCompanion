@@ -196,6 +196,8 @@ object MainNavigation {
                 WorkoutScreen(viewModel = viewModel , onBackIsPressed = {
                     displayNavBar()
                     navController.popBackStack()
+                } , onMetadataChanged = {
+                    trainingProgramViewModel.updateMetadata(it)
                 })
             }
         }

@@ -1,7 +1,7 @@
 package com.example.workoutcompanion.workout_designer.progression_overload
 
-import com.example.workoutcompanion.core.data.workout_tracking.one_rep_max.OneRepMax
-import com.example.workoutcompanion.core.data.workout_tracking.week.Week
+import com.example.workoutcompanion.core.domain.model.progression_overload.ExerciseProgressionSchema
+import com.example.workoutcompanion.core.data.workout.week.Week
 import kotlin.math.*
 
 class ProgressionOverloadManager {

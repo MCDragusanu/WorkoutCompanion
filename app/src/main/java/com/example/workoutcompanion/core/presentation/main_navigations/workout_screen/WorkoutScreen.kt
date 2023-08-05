@@ -11,7 +11,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -28,30 +30,34 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.compose.getPalette
 import com.example.workoutcompanion.R
-import com.example.workoutcompanion.core.data.workout_tracking.exercise_slot.ExerciseSlot
-import com.example.workoutcompanion.core.data.workout_tracking.set_slot.SetSlot
-import com.example.workoutcompanion.core.data.workout_tracking.week.Week
-import com.example.workoutcompanion.core.data.workout_tracking.workout.WorkoutMetadata
+import com.example.workoutcompanion.core.data.user_database.common.guestProfile
+import com.example.workoutcompanion.core.data.workout.exercise_slot.ExerciseSlot
+import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot
+import com.example.workoutcompanion.core.data.workout.week.Week
+import com.example.workoutcompanion.core.data.workout.workout.WorkoutMetadata
 import com.example.workoutcompanion.core.domain.model.exercise.Exercise
 import com.example.workoutcompanion.core.presentation.main_navigations.MainNavigation
 import com.example.workoutcompanion.core.presentation.main_navigations.screens.training_program_dashboard.RepsAndWeightDialogue
 import com.example.workoutcompanion.ui.Typography
 import com.example.workoutcompanion.ui.cardShapes
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    operator fun invoke(viewModel : WorkoutScreenViewModel , onBackIsPressed : () -> Unit) {
+    operator fun invoke(viewModel : WorkoutScreenViewModel , onBackIsPressed : () -> Unit , onMetadataChanged:(WorkoutMetadata)->Unit) {
 
-        val metadata by viewModel.metadata.collectAsState()
+        val metadata by viewModel.metadata.onEach { onMetadataChanged(it) }.collectAsState(
+            WorkoutMetadata(0 , guestProfile.uid,"Default Workout","",1 , dayOfWeek = 0)
+        )
         val isLoading by viewModel.isLoading.collectAsState()
         var showColorDialogue by remember { mutableStateOf(false) }
-
+        var showNameDialogue by remember { mutableStateOf(false) }
         val scope = rememberCoroutineScope()
         val scaffoldState =
             rememberBottomSheetScaffoldState(bottomSheetState = SheetState(skipPartiallyExpanded = true))
@@ -60,17 +66,24 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
             scaffoldState = scaffoldState ,
             containerColor = MaterialTheme.colorScheme.background ,
             sheetContent = {
-                /*AddExerciseBottomSheet(
-                      modifier = Modifier.fillMaxSize() ,
-                      bottomSheetIsLoading = viewModel.bottomSheetIsLoading ,
-                      exerciseCollection = viewModel.exerciseCollection ,
-                      onSearchExercise = {text->
-                          viewModel.onSearchExercise(text)
-                      },
-
-                  )*/
+                AddExerciseBottomSheet(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.75f) ,
+                    bottomSheetIsLoading = viewModel.bottomSheetIsLoading ,
+                    exerciseCollection = viewModel.exerciseCollection ,
+                    onSearchExercise = { text ->
+                        viewModel.onSearchExercise(text)
+                    } ,
+                    onAddExercise = {
+                        viewModel.addExercise(it)
+                        scope.launch {
+                            scaffoldState.bottomSheetState.hide()
+                        }
+                    }
+                )
             } ,
-            sheetContainerColor = MaterialTheme.colorScheme.secondaryContainer ,
+            sheetContainerColor = getPalette().current.tertiarySurfaceColor ,
             sheetContentColor = MaterialTheme.colorScheme.onBackground ,
             sheetSwipeEnabled = false ,
             sheetPeekHeight = 0.dp ,
@@ -98,7 +111,7 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
                             showColorDialogue = true
                         } ,
                         onEditWorkoutName = {
-
+                            showNameDialogue = true
                         } , onChangeDayOfWeek = {
 
                         } , onStartWorkout = {
@@ -153,6 +166,15 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
                 }
             )
         }
+        if (showNameDialogue) {
+            ChangeWorkoutNameDialogue(onDismiss = { showNameDialogue = false } ,
+                text = metadata.name ,
+                onSubmit = {
+                    viewModel.updateMetadata(metadata.copy(name = it))
+                    showNameDialogue = false
+                    onMetadataChanged(metadata)
+                })
+        }
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -162,76 +184,103 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
         modifier : Modifier ,
         bottomSheetIsLoading : StateFlow<Boolean> ,
         exerciseCollection : StateFlow<List<Exercise>> ,
-        onSearchExercise : (String) -> Unit
+        onSearchExercise : (String) -> Unit,
+        onAddExercise : (Exercise) -> Unit
     ) {
         val isLoading by bottomSheetIsLoading.collectAsState()
         val exerciseList by exerciseCollection.collectAsState()
         var currentText by remember { mutableStateOf("") }
-        val names = stringArrayResource(id = R.array.MuscleGroups)
-        LazyColumn(
-            modifier = modifier.padding(16.dp) ,
-            verticalArrangement = Arrangement.spacedBy(16.dp , alignment = Alignment.Top) ,
+
+        Column(
+            modifier = modifier
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()) ,
+            verticalArrangement = Arrangement.spacedBy(4.dp , alignment = Alignment.Top) ,
             horizontalAlignment = Alignment.Start
         ) {
-            item { Text(text = "Add new Exercise" , style = Typography.headlineSmall) }
-
-            item {
-                SearchBar(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight() ,
-                    query = currentText ,
-                    placeholder = {
-                        Text(text = "Search any exercise")
-                    } ,
-                    onQueryChange = {
-                        currentText = it
-                        onSearchExercise(it)
-                    } ,
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Filled.Search , contentDescription = null)
-                    } ,
-                    trailingIcon = {
-                        AnimatedVisibility(visible = isLoading) {
-                            CircularProgressIndicator()
-                        }
-                    } ,
-                    onSearch = {
-                        /* currentText = it
-                        onSearchExercise(it)*/
-                    } ,
-                    active = !isLoading ,
-                    onActiveChange = {
-
+            Text(text = "Add new Exercise" , style = Typography.headlineSmall)
+            Spacer(modifier = Modifier.size(12.dp))
+            TextField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight() ,
+                value = currentText ,
+                placeholder = {
+                    Text(text = "Search any exercise")
+                } ,
+                onValueChange = {
+                    currentText = it
+                    onSearchExercise(it)
+                } ,
+                leadingIcon = {
+                    Icon(imageVector = Icons.Filled.Search , contentDescription = null)
+                } ,
+                trailingIcon = {
+                    AnimatedVisibility(visible = isLoading) {
+                        CircularProgressIndicator()
                     }
-                ) {}
-            }
-            items(exerciseList.subList(0 , minOf(5 , exerciseList.size)) , key = { it.uid }) {
-                ExerciseCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp) , it
-                )
-            }
+                } ,
+            )
+            exerciseList.onEach {
+            ExerciseCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight() , it,
+                onSubmitExercise = onAddExercise
+            )
+        }
         }
     }
 
     @Composable
-    fun ExerciseCard(modifier : Modifier , exercise : Exercise) {
+    fun ExerciseCard(modifier : Modifier , exercise : Exercise , onSubmitExercise:(Exercise)->Unit) {
+        val names = stringArrayResource(id = R.array.MuscleGroups)
         Card(
-            modifier = modifier ,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            modifier = modifier.clickable { onSubmitExercise(exercise) } ,
+            colors = CardDefaults.cardColors(containerColor = getPalette().current.secondarySurfaceColor)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(12.dp) ,
                 horizontalAlignment = Alignment.Start ,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(text = exercise.exerciseName , style = Typography.labelMedium ,)
+
+                val muscleGroupsSt = buildString {
+                    val list =
+                        (exercise.movement.primaryMuscleGroups + exercise.movement.secondaryMuscleGroups).map { it.first.ordinal }
+                    list.onEachIndexed { index , i ->
+                        when (list.size) {
+                            1 -> {
+                                append(names[i])
+                            }
+                            2 -> {
+                                append(names[0])
+                                append(" & ")
+                                append(names[1])
+                            }
+                            else -> {
+                                if (index != list.indices.last) {
+                                    append(names[i])
+                                    append(" ")
+                                } else append(" & ${names[i]}")
+                            }
+                        }
+                        if (list.size == 1) {
+                            append(names[i])
+                        }
+                    }
+                }
+                Text(
+                    muscleGroupsSt ,
+                    color = MaterialTheme.colorScheme.onBackground.copy(0.5f) ,
+                    style = Typography.labelSmall
+                )
                 Text(
                     text = if (exercise.movement.type == 0) "Compound" else "Isolation" ,
+                    style = Typography.labelSmall,
                     color = MaterialTheme.colorScheme.onBackground.copy(0.5f)
                 )
             }

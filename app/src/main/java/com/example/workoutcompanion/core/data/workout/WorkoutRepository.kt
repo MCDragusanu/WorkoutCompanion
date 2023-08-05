@@ -1,11 +1,12 @@
-package com.example.workoutcompanion.core.data.workout_tracking
+package com.example.workoutcompanion.core.data.workout
 
-import com.example.workoutcompanion.core.data.workout_tracking.exercise_slot.ExerciseSlot
-import com.example.workoutcompanion.core.data.workout_tracking.one_rep_max.OneRepMax
-import com.example.workoutcompanion.core.data.workout_tracking.set_slot.SetSlot
-import com.example.workoutcompanion.core.data.workout_tracking.week.Week
-import com.example.workoutcompanion.core.data.workout_tracking.workout.WorkoutMetadata
-import com.example.workoutcompanion.core.data.workout_tracking.workout_session.WorkoutSession
+import com.example.workoutcompanion.core.data.workout.exercise_slot.ExerciseSlot
+import com.example.workoutcompanion.core.data.workout.one_rep_max.OneRepMax
+import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot
+import com.example.workoutcompanion.core.data.workout.week.Week
+import com.example.workoutcompanion.core.data.workout.workout.WorkoutMetadata
+import com.example.workoutcompanion.core.domain.model.progression_overload.ExerciseProgressionSchema
+import com.example.workoutcompanion.workout_designer.progression_overload.TrainingParameters
 
 interface WorkoutRepository {
 
@@ -25,7 +26,11 @@ interface WorkoutRepository {
    suspend fun getWorkoutByUid(_workoutUid : Long) : WorkoutMetadata?
    suspend  fun deleteExerciseSlot(slot : ExerciseSlot)
    suspend fun updateMetadata(value : WorkoutMetadata)
-  suspend  fun removeSet(set : SetSlot)
+   suspend  fun removeSet(set : SetSlot)
+
+   suspend fun getTrainingParameters(userUid : String):Result<TrainingParameters?>
+  suspend fun createInitialParameters(uid : String)
+  suspend fun updateSchema(schema : ExerciseProgressionSchema ,   parametersMetadata : Long)
 
     /*suspend fun addExerciseSlot(slot : ExerciseSlot) : Result<Nothing?>
 

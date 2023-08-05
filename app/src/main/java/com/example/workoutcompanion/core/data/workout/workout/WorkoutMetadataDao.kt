@@ -1,4 +1,4 @@
-package com.example.workoutcompanion.core.data.workout_tracking.workout
+package com.example.workoutcompanion.core.data.workout.workout
 
 import androidx.room.*
 

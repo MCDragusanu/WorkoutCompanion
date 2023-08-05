@@ -1,4 +1,4 @@
-package com.example.workoutcompanion.core.data.workout_tracking.one_rep_max
+package com.example.workoutcompanion.core.data.workout.one_rep_max
 
 import androidx.room.*
 

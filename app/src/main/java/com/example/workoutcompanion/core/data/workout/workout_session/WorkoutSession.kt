@@ -1,4 +1,4 @@
-package com.example.workoutcompanion.core.data.workout_tracking.workout_session
+package com.example.workoutcompanion.core.data.workout.workout_session
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

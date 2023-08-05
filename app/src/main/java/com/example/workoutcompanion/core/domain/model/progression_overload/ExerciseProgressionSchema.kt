@@ -1,4 +1,4 @@
-package com.example.workoutcompanion.workout_designer.progression_overload
+package com.example.workoutcompanion.core.domain.model.progression_overload
 
 import com.example.workoutcompanion.core.domain.model.exercise.Exercise
 
@@ -14,13 +14,14 @@ data class ExerciseProgressionSchema(
     var uid : Int = 0
 
     companion object {
-        const val DEFAULT_GROUTH_COEFF = 0.025
-
+        const val SMALL_GROWTH_COEFF = 0.015
+        const val NORMAL_GROWTH_COEFF = 0.025
+        const val BIG_GROWTH_COEFF = 0.05
         val primaryCompoundSchema = ExerciseProgressionSchema(
             appliedTo = Exercise.Companion.ExerciseCategory.PrimaryCompound ,
             trainingParametersUid = -1 ,
             repRange = (4..8),
-            weightIncrementCoeff = DEFAULT_GROUTH_COEFF,
+            weightIncrementCoeff = SMALL_GROWTH_COEFF ,
             smallestWeightIncrementAvailable = 2.5,
             repIncreaseRate = 2
         )
@@ -29,7 +30,7 @@ data class ExerciseProgressionSchema(
             appliedTo = Exercise.Companion.ExerciseCategory.SecondaryCompound ,
             trainingParametersUid = -1 ,
             repRange = (10..15),
-            weightIncrementCoeff = DEFAULT_GROUTH_COEFF,
+            weightIncrementCoeff = SMALL_GROWTH_COEFF ,
             smallestWeightIncrementAvailable = 2.5,
             repIncreaseRate = 2
         )
@@ -38,7 +39,7 @@ data class ExerciseProgressionSchema(
             appliedTo = Exercise.Companion.ExerciseCategory.Isolation ,
             trainingParametersUid = -1 ,
             repRange = (10..15),
-            weightIncrementCoeff = DEFAULT_GROUTH_COEFF,
+            weightIncrementCoeff = SMALL_GROWTH_COEFF ,
             smallestWeightIncrementAvailable = 2.5,
             repIncreaseRate = 2
         )

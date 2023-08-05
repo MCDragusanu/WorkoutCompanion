@@ -1,9 +1,9 @@
-package com.example.workoutcompanion.core.data.workout_tracking.module
+package com.example.workoutcompanion.core.data.workout.module
 
 import android.app.Application
-import com.example.workoutcompanion.core.data.workout_tracking.WorkoutRepositoryImpl
-import com.example.workoutcompanion.core.data.workout_tracking.WorkoutRepository
-import com.example.workoutcompanion.core.data.workout_tracking.database.WorkoutDatabase
+import com.example.workoutcompanion.core.data.workout.WorkoutRepositoryImpl
+import com.example.workoutcompanion.core.data.workout.WorkoutRepository
+import com.example.workoutcompanion.core.data.workout.database.WorkoutDatabase
 import com.example.workoutcompanion.workout_designer.progression_overload.ProgressionOverloadManager
 import dagger.Module
 import dagger.Provides
@@ -26,7 +26,9 @@ object WorkoutModule {
                 this.setSlotDao ,
                 this.weekDao ,
                 this.workoutMetadataDao ,
-                this.workoutSessionDao
+                this.workoutSessionDao,
+                this.progressioDao,
+                this.trainingParametersDao
             )
         }
     }

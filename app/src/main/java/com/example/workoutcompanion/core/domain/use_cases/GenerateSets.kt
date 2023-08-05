@@ -1,7 +1,7 @@
 package com.example.workoutcompanion.core.domain.use_cases
 
-import com.example.workoutcompanion.core.data.workout_tracking.set_slot.SetSlot
-import com.example.workoutcompanion.core.data.workout_tracking.week.Week
+import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot
+import com.example.workoutcompanion.core.data.workout.week.Week
 
 class GenerateSets {
 

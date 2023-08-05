@@ -26,8 +26,7 @@ class LoginViewModel @Inject constructor(
     private val auth : AuthManager,
     @Testing
     private val repository : ExerciseRepository,
-    @Testing
-    private val userRepository : ProfileRepository,
+
 
     private val networkObserver: NetworkObserver
                                          ):ViewModel() {
@@ -270,27 +269,6 @@ class LoginViewModel @Inject constructor(
                         onSuccess = { uid ->
                             // Put the UI in the completed state
                             viewModelScope.launch(Dispatchers.IO) {
-
-                                    userRepository.getProfileFromCloudSource(uid , this).onFailure {
-                                        onError(Exception(it))
-                                    }.onSuccess {
-                                        Log.d(
-                                            "Test" ,
-                                            "Login ViewModel :: completed retrieval of profile from cloud"
-                                        )
-                                        it?.let {
-                                            userRepository.updateLocalProfile(it.uid , it)
-                                                .onFailure {
-                                                    onError(Exception(it))
-                                                }.onSuccess {
-                                                    Log.d(
-                                                        "Test" ,
-                                                        "Login ViewModel:: local profile has been updated"
-                                                    )
-                                                }
-                                        }
-                                    }
-
                                 val res =  repository.onUpdateLocalDatabase()
                                 if (res.isFailure) {
                                     res.exceptionOrNull()

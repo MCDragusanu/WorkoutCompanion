@@ -1,4 +1,4 @@
-package com.example.workoutcompanion.core.data.workout_tracking.week
+package com.example.workoutcompanion.core.data.workout.week
 
 import androidx.room.*
 

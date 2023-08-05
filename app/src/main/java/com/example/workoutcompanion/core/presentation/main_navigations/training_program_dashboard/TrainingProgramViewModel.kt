@@ -3,18 +3,18 @@ package com.example.workoutcompanion.core.presentation.main_navigations.training
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.workoutcompanion.core.data.di.Production
+import com.example.workoutcompanion.common.extentions.replace
 import com.example.workoutcompanion.core.data.di.Testing
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
 import com.example.workoutcompanion.core.data.user_database.common.UserProfile
 import com.example.workoutcompanion.core.data.user_database.common.guestProfile
-import com.example.workoutcompanion.core.data.workout_tracking.WorkoutRepository
-import com.example.workoutcompanion.core.data.workout_tracking.exercise_slot.ExerciseSlot
-import com.example.workoutcompanion.core.data.workout_tracking.set_slot.SetSlot
-import com.example.workoutcompanion.core.data.workout_tracking.week.Week
-import com.example.workoutcompanion.core.data.workout_tracking.workout.WorkoutMetadata
+import com.example.workoutcompanion.core.data.workout.WorkoutRepository
+import com.example.workoutcompanion.core.data.workout.exercise_slot.ExerciseSlot
+import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot
+import com.example.workoutcompanion.core.data.workout.week.Week
+import com.example.workoutcompanion.core.data.workout.workout.WorkoutMetadata
 import com.example.workoutcompanion.core.domain.model.exercise.Exercise
-import com.example.workoutcompanion.workout_designer.progression_overload.ExerciseProgressionSchema
+import com.example.workoutcompanion.core.domain.model.progression_overload.ExerciseProgressionSchema
 import com.example.workoutcompanion.workout_designer.progression_overload.ProgressionOverloadManager
 import com.example.workoutcompanion.workout_designer.progression_overload.TrainingParameters
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -41,17 +41,14 @@ class TrainingProgramViewModel @Inject constructor(
     private var _profile : UserProfile? = null
 
 
-    private val _trainingParameters = TrainingParameters(
-        uid = 0 ,
-        userUid = guestProfile.uid ,
-        programUid = -1 ,
-        primaryCompoundSchema = ExerciseProgressionSchema.primaryCompoundSchema ,
-        secondaryCompoundSchema = ExerciseProgressionSchema.secondaryCompoundSchema ,
-        isolationSchema = ExerciseProgressionSchema.isolationSchema
-    )
+    private var _trainingParameters = MutableStateFlow<TrainingParameters?>(null)
+    val trainingParameters = _trainingParameters.asStateFlow()
 
-    private var _userUid:String? = null
-    fun retrieveProfile(uid:String) {
+
+    private var _userUid : String? = null
+
+
+    fun retrieveProfile(uid : String) {
         _userUid = uid
         viewModelScope.launch(Dispatchers.IO) {
             userRepositoryImpl.getProfileFromLocalSource(uid , this).onSuccess {
@@ -60,14 +57,15 @@ class TrainingProgramViewModel @Inject constructor(
                     "Training Program Screen :: ${it?.uid ?: "No user profile retrieved"}"
                 )
                 _profile = it
-                _profile?.let {
+                _profile?.let {user->
 
-                    workoutRepository.getWorkouts(it.uid).sortedBy { it.dayOfWeek }
+                    workoutRepository.getWorkouts(user.uid).sortedBy { it.dayOfWeek }
                         .onEach { metadata ->
                             _workouts.update {
                                 it + metadata
                             }
                         }
+                    _trainingParameters.update {  workoutRepository.getTrainingParameters(user.uid).getOrNull() }
                 }
             }.onFailure {
                 Log.d("Test" , it.stackTraceToString())
@@ -82,10 +80,10 @@ class TrainingProgramViewModel @Inject constructor(
             // Create metadata for the new workout
             val workoutMetadata = WorkoutMetadata(
                 uid = workoutUid ,
-                ownerUid = _userUid?: guestProfile.uid ,
+                ownerUid = _userUid ?: guestProfile.uid ,
                 name = "Workout #${_workouts.value.size + 1}" ,
                 description = "" ,
-                dayOfWeek =  _workouts.value.size
+                dayOfWeek = _workouts.value.size
             )
 
 
@@ -103,12 +101,15 @@ class TrainingProgramViewModel @Inject constructor(
                     workoutUid = workoutUid ,
                     exerciseName = it.exerciseName ,
                     type = it.movement.type ,
-                    isBodyWeight = it.isBodyWeight,
+                    isBodyWeight = it.isBodyWeight ,
                     category = it.exerciseCategory.ordinal ,
-                    muscleGroups = buildString{ (it.movement.primaryMuscleGroups + it.movement.secondaryMuscleGroups).map { it.first.ordinal }.onEach {
-                        append(it)
-                        append("/")
-                    } } ,
+                    muscleGroups = buildString {
+                        (it.movement.primaryMuscleGroups + it.movement.secondaryMuscleGroups).map { it.first.ordinal }
+                            .onEach {
+                                append(it)
+                                append("/")
+                            }
+                    } ,
                     exerciseUid = it.uid ,
                     index = index
                 )
@@ -160,17 +161,59 @@ class TrainingProgramViewModel @Inject constructor(
 
             }
             _workouts.update {
-                it+workoutMetadata
+                it + workoutMetadata
             }
         }
     }
 
     private inline fun getSchema(int : Int) = when (int) {
-        Exercise.Companion.ExerciseCategory.Isolation.ordinal -> _trainingParameters.isolationSchema
-        Exercise.Companion.ExerciseCategory.SecondaryCompound.ordinal -> _trainingParameters.secondaryCompoundSchema
-        else -> _trainingParameters.primaryCompoundSchema
+        Exercise.Companion.ExerciseCategory.Isolation.ordinal -> _trainingParameters.value?.isolationSchema
+            ?: ExerciseProgressionSchema.isolationSchema
+        Exercise.Companion.ExerciseCategory.SecondaryCompound.ordinal -> _trainingParameters.value?.secondaryCompoundSchema
+            ?: ExerciseProgressionSchema.secondaryCompoundSchema
+        else -> _trainingParameters.value?.primaryCompoundSchema
+            ?: ExerciseProgressionSchema.primaryCompoundSchema
     }
 
+    fun updateMetadata(newWorkout : WorkoutMetadata) {
+        Log.d("Test" , "Metadata changed")
+        _workouts.update {
+            it.replace(newWorkout) {
+                it.uid == newWorkout.uid
+            }
+        }
+    }
 
+    fun generateInitialParameters() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _trainingParameters.update {
+                val uid = System.currentTimeMillis()
+                TrainingParameters(
+                    uid = uid ,
+                    userUid = _profile?.uid ?: guestProfile.uid ,
+                    programUid = -1 ,
+                    primaryCompoundSchema = ExerciseProgressionSchema.primaryCompoundSchema ,
+                    secondaryCompoundSchema = ExerciseProgressionSchema.secondaryCompoundSchema ,
+                    isolationSchema = ExerciseProgressionSchema.isolationSchema
+                )
+
+            }
+            workoutRepository.createInitialParameters(_profile?.uid ?: guestProfile.uid)
+        }
+    }
+
+    fun updateSchema(appliedTo : Int , schema : ExerciseProgressionSchema) {
+        viewModelScope.launch {
+            _trainingParameters.update {
+                when (appliedTo) {
+                    0 -> it?.copy(primaryCompoundSchema = schema.apply { this.uid = schema.uid })
+                    1 -> it?.copy(secondaryCompoundSchema = schema.apply { this.uid = schema.uid })
+                    else -> it?.copy(isolationSchema = schema.apply { this.uid = schema.uid })
+                }
+
+            }
+            workoutRepository.updateSchema(schema , _trainingParameters.value?.uid?:0)
+        }
+    }
 
 }

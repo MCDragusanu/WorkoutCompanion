@@ -5,21 +5,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.workoutcompanion.common.extentions.replace
-import com.example.workoutcompanion.core.data.di.Production
 import com.example.workoutcompanion.core.data.di.Testing
 import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseRepository
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
 import com.example.workoutcompanion.core.data.user_database.common.UserProfile
 import com.example.workoutcompanion.core.data.user_database.common.guestProfile
-import com.example.workoutcompanion.core.data.workout_tracking.WorkoutRepository
-import com.example.workoutcompanion.core.data.workout_tracking.exercise_slot.ExerciseSlot
-import com.example.workoutcompanion.core.data.workout_tracking.one_rep_max.OneRepMax
-import com.example.workoutcompanion.core.data.workout_tracking.set_slot.SetSlot
-import com.example.workoutcompanion.core.data.workout_tracking.week.Week
-import com.example.workoutcompanion.core.data.workout_tracking.workout.WorkoutMetadata
+import com.example.workoutcompanion.core.data.workout.WorkoutRepository
+import com.example.workoutcompanion.core.data.workout.exercise_slot.ExerciseSlot
+import com.example.workoutcompanion.core.data.workout.one_rep_max.OneRepMax
+import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot
+import com.example.workoutcompanion.core.data.workout.week.Week
+import com.example.workoutcompanion.core.data.workout.workout.WorkoutMetadata
 import com.example.workoutcompanion.core.domain.model.exercise.Exercise
 import com.example.workoutcompanion.core.domain.use_cases.GenerateSets
-import com.example.workoutcompanion.workout_designer.progression_overload.ExerciseProgressionSchema
+import com.example.workoutcompanion.core.domain.model.progression_overload.ExerciseProgressionSchema
 import com.example.workoutcompanion.workout_designer.progression_overload.ProgressionOverloadManager
 import com.example.workoutcompanion.workout_designer.progression_overload.TrainingParameters
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -46,14 +45,7 @@ class WorkoutScreenViewModel @Inject constructor(private val progressionManager:
 
     private var _workoutUid : Long = -1
 
-    private val _trainingParameters = TrainingParameters(
-        uid = 0 ,
-        userUid = guestProfile.uid ,
-        programUid = -1 ,
-        primaryCompoundSchema = ExerciseProgressionSchema.primaryCompoundSchema ,
-        secondaryCompoundSchema = ExerciseProgressionSchema.secondaryCompoundSchema ,
-        isolationSchema = ExerciseProgressionSchema.isolationSchema
-    )
+    private var _trainingParameters :TrainingParameters?= null
 
     private val _metadata = MutableStateFlow(
         WorkoutMetadata(
@@ -97,6 +89,7 @@ class WorkoutScreenViewModel @Inject constructor(private val progressionManager:
                 }
                 _profile?.let {
                     Log.d("Test" , "Profile retrieved = ${it.firstName}")
+                    _trainingParameters =workoutRepository.getTrainingParameters(it.uid).getOrNull()
                 }
             }.onFailure {
                 Log.d("Test" , it.stackTraceToString())
@@ -109,6 +102,8 @@ class WorkoutScreenViewModel @Inject constructor(private val progressionManager:
         _workoutUid = workoutUid
         viewModelScope.launch(Dispatchers.IO) {
             val metadatata = workoutRepository.getWorkoutByUid(_workoutUid)
+
+
             if (metadatata == null) {
                 Log.d("Test" , "No workout found")
                 return@launch
@@ -164,10 +159,11 @@ class WorkoutScreenViewModel @Inject constructor(private val progressionManager:
     }
 
     private inline fun getSchema(int : Int) = when (int) {
-        Exercise.Companion.ExerciseCategory.Isolation.ordinal -> _trainingParameters.isolationSchema
-        Exercise.Companion.ExerciseCategory.SecondaryCompound.ordinal -> _trainingParameters.secondaryCompoundSchema
-        else -> _trainingParameters.primaryCompoundSchema
+        Exercise.Companion.ExerciseCategory.Isolation.ordinal -> _trainingParameters?.isolationSchema?: ExerciseProgressionSchema.isolationSchema
+        Exercise.Companion.ExerciseCategory.SecondaryCompound.ordinal -> _trainingParameters?.secondaryCompoundSchema?: ExerciseProgressionSchema.secondaryCompoundSchema
+        else -> _trainingParameters?.primaryCompoundSchema?: ExerciseProgressionSchema.primaryCompoundSchema
     }
+
 
     fun onSubmittedStartingPoint(
         slot : ExerciseSlot ,
@@ -229,6 +225,7 @@ class WorkoutScreenViewModel @Inject constructor(private val progressionManager:
         }
     }
 
+
     fun updateColors(pair : Pair<Color , Color>) {
         viewModelScope.launch {
             _metadata.update {
@@ -279,6 +276,54 @@ class WorkoutScreenViewModel @Inject constructor(private val progressionManager:
             val set = SetSlot(weightInKgs = weight , reps = reps , week.uid , setIndex)
             _sets.update { it + set }
             workoutRepository.addSets(sets = arrayOf(set))
+        }
+    }
+
+    fun addExercise(exercise : Exercise) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val lastIndex = _exerciseSlots.value.maxOfOrNull { it.index }?:-1
+            val slotUid = System.currentTimeMillis()
+            val slot = ExerciseSlot(
+                uid = slotUid ,
+                workoutUid = metadata.value.uid ,
+                exerciseName = exercise.exerciseName ,
+                type = exercise.movement.type ,
+                category = exercise.exerciseCategory.ordinal ,
+                isBodyWeight = exercise.isBodyWeight ,
+                exerciseUid = exercise.uid ,
+                muscleGroups = buildString {
+                    (exercise.movement.primaryMuscleGroups + exercise.movement.secondaryMuscleGroups).map { it.first.ordinal }
+                        .onEach {
+                            append("${it}")
+                            append("/")
+                        }
+                } ,
+                index = lastIndex + 1
+            )
+            _profile?.let {
+
+                val oneRepMaxWeight = workoutRepository.getLatestOneRepMax(exercise.uid , it.uid)
+
+                oneRepMaxWeight?.let {
+                    val startingPoint = progressionManager.findStartingPoint(
+                        uid = System.currentTimeMillis() ,
+                        exerciseSlotUid = slotUid ,
+                        oneRepMaxWeight = it.weightKgs ,
+                        desiredNumberOfSets = 4 ,
+                        schema = getSchema(slot.category)
+                    )
+
+                    val sets = GenerateSets().execute(startingPoint)
+
+                    workoutRepository.addSets(*sets.toTypedArray())
+                    workoutRepository.addWeek(startingPoint)
+                    _sets.update { it + sets }
+                    _weeks.update { it + startingPoint }
+
+                }
+                workoutRepository.addExerciseSlot(slot)
+                _exerciseSlots.update { it + slot }
+            }
         }
     }
 }

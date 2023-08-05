@@ -1,4 +1,4 @@
-package com.example.workoutcompanion.core.data.workout_tracking.set_slot
+package com.example.workoutcompanion.core.data.workout.set_slot
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

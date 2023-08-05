@@ -73,7 +73,8 @@
     <string name="error_invalid_decimal">Please enter a valid decimal number</string>
     <string name="error_invalid_interger">Please enter a valid whole number</string>
     <string name="add_new_set">Add new Set</string>
-
+    <string name="rep_range_body">Edit the rep range that will be applied to this category of exercises.\nAdvice: Use higher rep ranges (8 – 15) if the primary goal is to build muscle</string>
+    <string name="weight_grouth_modifier_body">"Tweak the amount of weight that will be added for each exercise category\nAdvice: If the length of the rep range is small  ,it is adviced to pick the smaller modifier"</string>
     <string-array name="MuscleGroups">
         <item>Chest</item>
         <item>Front Delts</item>
