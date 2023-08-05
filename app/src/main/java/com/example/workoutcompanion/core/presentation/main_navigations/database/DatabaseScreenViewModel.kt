@@ -18,7 +18,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DatabaseScreenViewModel @Inject constructor (
-    @Testing
+    @Production
     private val repo:ExerciseRepository):ViewModel() {
 
 

@@ -22,11 +22,11 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    @Testing
+    @Production
     private val auth : AuthManager,
-    @Testing
+    @Production
     private val repository : ExerciseRepository,
-    @Testing
+    @Production
     private val userRepository : ProfileRepository,
 
     private val networkObserver: NetworkObserver
@@ -270,27 +270,6 @@ class LoginViewModel @Inject constructor(
                         onSuccess = { uid ->
                             // Put the UI in the completed state
                             viewModelScope.launch(Dispatchers.IO) {
-
-                                    userRepository.getProfileFromCloudSource(uid , this).onFailure {
-                                        onError(Exception(it))
-                                    }.onSuccess {
-                                        Log.d(
-                                            "Test" ,
-                                            "Login ViewModel :: completed retrieval of profile from cloud"
-                                        )
-                                        it?.let {
-                                            userRepository.updateLocalProfile(it.uid , it)
-                                                .onFailure {
-                                                    onError(Exception(it))
-                                                }.onSuccess {
-                                                    Log.d(
-                                                        "Test" ,
-                                                        "Login ViewModel:: local profile has been updated"
-                                                    )
-                                                }
-                                        }
-                                    }
-
                                 val res =  repository.onUpdateLocalDatabase()
                                 if (res.isFailure) {
                                     res.exceptionOrNull()

@@ -32,9 +32,9 @@ import javax.inject.Inject
 @HiltViewModel
 class WorkoutScreenViewModel @Inject constructor(private val progressionManager:ProgressionOverloadManager ,
                                                  private val workoutRepository : WorkoutRepository ,
-                                                 @Testing
+                                                 @Production
                                                  private val userRepository  : ProfileRepository,
-                                                 @Testing
+                                                 @Production
                                                  private val exerciseRepository : ExerciseRepository,
                                                  ):ViewModel() {
 
@@ -229,6 +229,14 @@ class WorkoutScreenViewModel @Inject constructor(private val progressionManager:
         }
     }
 
+    //TODO see what casues the weird bug that shows many sets in the ui layer when editing the sets
+    //TODO update the metadata inside the training program
+    //TODO implement the change date dialogue
+    //TODO implement the persistance of the training parameters
+    //TODO IDEA----> create in the home screen a stock / crypto like chart to show the evolution of one rep maxes for exercise
+    //TODO implement the lenght of workout estimation
+    //TODO implement the replace exercise feature
+    //TODO implement
     fun updateColors(pair : Pair<Color , Color>) {
         viewModelScope.launch {
             _metadata.update {
@@ -279,6 +287,54 @@ class WorkoutScreenViewModel @Inject constructor(private val progressionManager:
             val set = SetSlot(weightInKgs = weight , reps = reps , week.uid , setIndex)
             _sets.update { it + set }
             workoutRepository.addSets(sets = arrayOf(set))
+        }
+    }
+
+    fun addExercise(exercise : Exercise) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val lastIndex = _exerciseSlots.value.maxOfOrNull { it.index }?:-1
+            val slotUid = System.currentTimeMillis()
+            val slot = ExerciseSlot(
+                uid = slotUid ,
+                workoutUid = metadata.value.uid ,
+                exerciseName = exercise.exerciseName ,
+                type = exercise.movement.type ,
+                category = exercise.exerciseCategory.ordinal ,
+                isBodyWeight = exercise.isBodyWeight ,
+                exerciseUid = exercise.uid ,
+                muscleGroups = buildString {
+                    (exercise.movement.primaryMuscleGroups + exercise.movement.secondaryMuscleGroups).map { it.first.ordinal }
+                        .onEach {
+                            append("${it}")
+                            append("/")
+                        }
+                } ,
+                index = lastIndex + 1
+            )
+            _profile?.let {
+
+                val oneRepMaxWeight = workoutRepository.getLatestOneRepMax(exercise.uid , it.uid)
+
+                oneRepMaxWeight?.let {
+                    val startingPoint = progressionManager.findStartingPoint(
+                        uid = System.currentTimeMillis() ,
+                        exerciseSlotUid = slotUid ,
+                        oneRepMaxWeight = it.weightKgs ,
+                        desiredNumberOfSets = 4 ,
+                        schema = getSchema(slot.category)
+                    )
+
+                    val sets = GenerateSets().execute(startingPoint)
+
+                    workoutRepository.addSets(*sets.toTypedArray())
+                    workoutRepository.addWeek(startingPoint)
+                    _sets.update { it + sets }
+                    _weeks.update { it + startingPoint }
+
+                }
+                workoutRepository.addExerciseSlot(slot)
+                _exerciseSlots.update { it + slot }
+            }
         }
     }
 }

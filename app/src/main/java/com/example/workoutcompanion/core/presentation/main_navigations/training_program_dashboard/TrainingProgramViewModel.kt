@@ -3,6 +3,7 @@ package com.example.workoutcompanion.core.presentation.main_navigations.training
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.workoutcompanion.common.extentions.replace
 import com.example.workoutcompanion.core.data.di.Production
 import com.example.workoutcompanion.core.data.di.Testing
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
@@ -28,7 +29,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TrainingProgramViewModel @Inject constructor(
-    @Testing
+    @Production
     private val userRepositoryImpl: ProfileRepository ,
     private val workoutRepository: WorkoutRepository ,
     private val progressionManager: ProgressionOverloadManager
@@ -50,8 +51,8 @@ class TrainingProgramViewModel @Inject constructor(
         isolationSchema = ExerciseProgressionSchema.isolationSchema
     )
 
-    private var _userUid:String? = null
-    fun retrieveProfile(uid:String) {
+    private var _userUid : String? = null
+    fun retrieveProfile(uid : String) {
         _userUid = uid
         viewModelScope.launch(Dispatchers.IO) {
             userRepositoryImpl.getProfileFromLocalSource(uid , this).onSuccess {
@@ -82,10 +83,10 @@ class TrainingProgramViewModel @Inject constructor(
             // Create metadata for the new workout
             val workoutMetadata = WorkoutMetadata(
                 uid = workoutUid ,
-                ownerUid = _userUid?: guestProfile.uid ,
+                ownerUid = _userUid ?: guestProfile.uid ,
                 name = "Workout #${_workouts.value.size + 1}" ,
                 description = "" ,
-                dayOfWeek =  _workouts.value.size
+                dayOfWeek = _workouts.value.size
             )
 
 
@@ -103,12 +104,15 @@ class TrainingProgramViewModel @Inject constructor(
                     workoutUid = workoutUid ,
                     exerciseName = it.exerciseName ,
                     type = it.movement.type ,
-                    isBodyWeight = it.isBodyWeight,
+                    isBodyWeight = it.isBodyWeight ,
                     category = it.exerciseCategory.ordinal ,
-                    muscleGroups = buildString{ (it.movement.primaryMuscleGroups + it.movement.secondaryMuscleGroups).map { it.first.ordinal }.onEach {
-                        append(it)
-                        append("/")
-                    } } ,
+                    muscleGroups = buildString {
+                        (it.movement.primaryMuscleGroups + it.movement.secondaryMuscleGroups).map { it.first.ordinal }
+                            .onEach {
+                                append(it)
+                                append("/")
+                            }
+                    } ,
                     exerciseUid = it.uid ,
                     index = index
                 )
@@ -160,7 +164,7 @@ class TrainingProgramViewModel @Inject constructor(
 
             }
             _workouts.update {
-                it+workoutMetadata
+                it + workoutMetadata
             }
         }
     }
@@ -171,6 +175,12 @@ class TrainingProgramViewModel @Inject constructor(
         else -> _trainingParameters.primaryCompoundSchema
     }
 
-
+    fun updateMetadata(newWorkout : WorkoutMetadata) {
+        _workouts.update {
+            it.replace(newWorkout) {
+                it.uid == newWorkout.uid
+            }
+        }
+    }
 
 }
