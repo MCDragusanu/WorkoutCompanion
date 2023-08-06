@@ -20,4 +20,6 @@ interface WorkoutSessionDao {
 
     @Query("DELETE from workout_session_table where ownerUid = :ownerUid")
     suspend fun deleteAllSessionsForUser(ownerUid:String)
+    @Query("Select * from workout_session_table where uid = :sessionUid")
+     fun getSessionByUid(sessionUid : Long) : WorkoutSession?
 }

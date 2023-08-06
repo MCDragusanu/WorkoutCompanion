@@ -8,7 +8,7 @@ class ProgressionOverloadManager {
 
 
     fun estimate1RepMaxInKgs(weightInKgs:Double , reps:Int) : Double {
-        return Weight(weightInKgs = weightInKgs / (1.0278 - (0.0278 * reps))).getWeightInKgs()
+        return weightInKgs / (1.0278 - (0.0278 * reps))
     }
 
 
@@ -19,7 +19,7 @@ class ProgressionOverloadManager {
     private fun recalculate(
         previousSolution : Week ,
         progressionSchema : ExerciseProgressionSchema ,
-        initialOneRepMax : Double ,
+
 
         ) : Week {
 
@@ -52,8 +52,7 @@ class ProgressionOverloadManager {
         //recalculate new solution
         else recalculate(
             previousWeek ,
-            progressionSchema ,
-            estimate1RepMaxInKgs(previousWeek.weightInKgs , previousWeek.reps)
+            progressionSchema
         )
 
     }

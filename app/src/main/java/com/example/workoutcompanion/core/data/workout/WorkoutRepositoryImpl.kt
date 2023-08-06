@@ -15,6 +15,7 @@ import com.example.workoutcompanion.core.data.workout.week.Week
 import com.example.workoutcompanion.core.data.workout.week.WeekDao
 import com.example.workoutcompanion.core.data.workout.workout.WorkoutMetadata
 import com.example.workoutcompanion.core.data.workout.workout.WorkoutMetadataDao
+import com.example.workoutcompanion.core.data.workout.workout_session.WorkoutSession
 import com.example.workoutcompanion.core.data.workout.workout_session.WorkoutSessionDao
 import com.example.workoutcompanion.core.domain.model.progression_overload.ExerciseProgressionSchema
 import com.example.workoutcompanion.core.domain.use_cases.RetrieveTrainingParameters
@@ -234,5 +235,21 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
                 smallestWeightIncrementAvailable = schema.smallestWeightIncrementAvailable
             ).apply { uid = schema.uid }
         )
+    }
+
+    override suspend fun getLatestWeek(uid : Long) : Week {
+       return weekDao.getWeeksForSlotInASCOrder(uid).last()
+    }
+
+    override suspend fun addSession(session : WorkoutSession) {
+        workoutSessionDao.addSession(session)
+    }
+
+    override suspend fun getSession(sessionUid : Long) : Result<WorkoutSession?> {
+       return try {
+           Result.success( workoutSessionDao.getSessionByUid(sessionUid))
+        }catch (e:Exception){
+            Result.failure(e)
+        }
     }
 }

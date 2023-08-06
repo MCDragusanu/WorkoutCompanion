@@ -8,11 +8,11 @@ data class WorkoutSession(@PrimaryKey(autoGenerate = false)
                           val uid:Long ,
                           val ownerUid:String ,
                           val status:Int ,
-                          val setUids:String
+                          val content:String
                           ){
 
     fun parseUids():List<Int>{
-      return setUids.split("/").map { it.toInt() }
+      return content.split("/").map { it.toInt() }
     }
     companion object{
 

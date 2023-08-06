@@ -37,8 +37,10 @@ import com.example.workoutcompanion.core.presentation.main_navigations.home.Home
 import com.example.workoutcompanion.core.presentation.main_navigations.profile.ProfileViewModel
 import com.example.workoutcompanion.core.presentation.main_navigations.training_program_dashboard.TrainingProgramDashboard
 import com.example.workoutcompanion.core.presentation.main_navigations.training_program_dashboard.TrainingProgramViewModel
-import com.example.workoutcompanion.core.presentation.main_navigations.workout_screen.WorkoutScreen
-import com.example.workoutcompanion.core.presentation.main_navigations.workout_screen.WorkoutScreenViewModel
+import com.example.workoutcompanion.core.presentation.main_navigations.workout_editor_screen.WorkoutScreen
+import com.example.workoutcompanion.core.presentation.main_navigations.workout_editor_screen.WorkoutScreenViewModel
+import com.example.workoutcompanion.core.presentation.main_navigations.workout_session.WorkoutSessionScreen
+import com.example.workoutcompanion.core.presentation.main_navigations.workout_session.WorkoutSessionViewModel
 import com.example.workoutcompanion.ui.Typography
 import com.example.workoutcompanion.ui.cardShapes
 import kotlinx.coroutines.flow.*
@@ -198,7 +200,23 @@ object MainNavigation {
                     navController.popBackStack()
                 } , onMetadataChanged = {
                     trainingProgramViewModel.updateMetadata(it)
+                }, onNavigateToSessionScreen = {
+                    navController.navigate(WorkoutSessionScreen.route + "/${userUid}/${it}")
                 })
+            }
+            composable(WorkoutSessionScreen.route + "/{userUid}/{sessionUid}" , arguments = listOf(
+                navArgument("userUid") {
+                    type = NavType.StringType
+                } , navArgument("sessionUid"){
+                    type = NavType.LongType
+                })){
+                val sessionUid = it.arguments?.getLong("sessionUid") ?: -1
+                val userUid = it.arguments?.getString("userUid")?: guestProfile.uid
+                val viewModel = hiltViewModel<WorkoutSessionViewModel>().apply {
+                    this.retriveProfile(userUid)    
+                    this.retrieveSession(sessionUid)
+                }
+                WorkoutSessionScreen.invoke(viewModel = viewModel)
             }
         }
     }

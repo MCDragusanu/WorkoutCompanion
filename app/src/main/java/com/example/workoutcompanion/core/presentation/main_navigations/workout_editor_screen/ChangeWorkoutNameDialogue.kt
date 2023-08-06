@@ -1,4 +1,4 @@
-package com.example.workoutcompanion.core.presentation.main_navigations.workout_screen
+package com.example.workoutcompanion.core.presentation.main_navigations.workout_editor_screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

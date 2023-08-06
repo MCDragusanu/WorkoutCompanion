@@ -1,4 +1,4 @@
-package com.example.workoutcompanion.core.presentation.main_navigations.workout_screen
+package com.example.workoutcompanion.core.presentation.main_navigations.workout_editor_screen
 
 import android.util.Log
 import androidx.compose.animation.AnimatedContent
@@ -50,20 +50,23 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    operator fun invoke(viewModel : WorkoutScreenViewModel , onBackIsPressed : () -> Unit , onMetadataChanged:(WorkoutMetadata)->Unit) {
+    operator fun invoke(viewModel : WorkoutScreenViewModel,onNavigateToSessionScreen:(Long)->Unit , onBackIsPressed : () -> Unit , onMetadataChanged:(WorkoutMetadata)->Unit) {
 
         val metadata by viewModel.metadata.onEach { onMetadataChanged(it) }.collectAsState(
-            WorkoutMetadata(0 , guestProfile.uid,"Default Workout","",1 , dayOfWeek = 0)
+            WorkoutMetadata(0 , guestProfile.uid , "Default Workout" , "" , 1 , dayOfWeek = 0)
         )
         val isLoading by viewModel.isLoading.collectAsState()
         var showColorDialogue by remember { mutableStateOf(false) }
         var showNameDialogue by remember { mutableStateOf(false) }
         val scope = rememberCoroutineScope()
+        val snackBarHostState = remember { SnackbarHostState() }
+        val currentError by viewModel.errorChannel.collectAsState(initial = "")
         val scaffoldState =
             rememberBottomSheetScaffoldState(bottomSheetState = SheetState(skipPartiallyExpanded = true))
         BottomSheetScaffold(
             modifier = Modifier.fillMaxSize() ,
             scaffoldState = scaffoldState ,
+            snackbarHost = { SnackbarHost(hostState = snackBarHostState) } ,
             containerColor = MaterialTheme.colorScheme.background ,
             sheetContent = {
                 AddExerciseBottomSheet(
@@ -115,7 +118,7 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
                         } , onChangeDayOfWeek = {
 
                         } , onStartWorkout = {
-
+                            viewModel.onStartWorkout(onNavigateToSessionScreen)
                         })
                 }
                 item {
@@ -174,6 +177,12 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
                     showNameDialogue = false
                     onMetadataChanged(metadata)
                 })
+        }
+        LaunchedEffect(key1 = currentError) {
+            Log.d("Test" , "Error changed")
+            if (currentError.isNotBlank()) {
+                snackBarHostState.showSnackbar(currentError)
+            }
         }
     }
 
