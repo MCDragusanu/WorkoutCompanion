@@ -193,7 +193,13 @@ object TrainingProgramDashboard:MainNavigation.Screens("Training Program Dashboa
     @Composable
     fun SchemaCard(modifier : Modifier,schema : ExerciseProgressionSchema , onUpdateSchema:(Int , ExerciseProgressionSchema)->Unit) {
         var currentRepRange by remember { mutableStateOf(schema.repRange.first.toFloat()..schema.repRange.last.toFloat()) }
-        var currentWeightGrowthRate by remember { mutableStateOf(0) }
+        var currentWeightGrowthRate by remember { mutableStateOf(
+            when (schema.weightIncrementCoeff) {
+                ExerciseProgressionSchema.SMALL_GROWTH_COEFF -> 0
+                ExerciseProgressionSchema.NORMAL_GROWTH_COEFF -> 1
+                else -> 2
+            }
+        ) }
         Column(
             modifier = modifier ,
             horizontalAlignment = Alignment.Start ,

@@ -13,26 +13,30 @@ class GenerateWorkoutSession {
         workoutRepository : WorkoutRepository
     ) : Result<WorkoutSession> {
         return try {
-            val slots = workoutRepository.getSlotsForWorkout(workoutMetadata.uid)
+            val slots = workoutRepository.getSlotsForWorkout(workoutMetadata.uid).onFailure { throw it }.getOrNull()
             val latestWeeks = mutableListOf<Week>()
             var string = ""
-            slots.onEach {
-                val latestWeek = workoutRepository.getLatestWeek(it.uid)
+            slots?.onEach {
+                workoutRepository.getLatestWeek(it.uid).onSuccess { latestWeek ->
 
-                val sets = workoutRepository.getSetsForWeek(latestWeek)
-
-                string += buildString {
-                    append("{")
-                    append("slotUid:${it.uid}")
-                    append("-")
-                    sets.sortedBy { it.index }.onEach {
-                        append("setUid:${it.uid}")
-                        append("-")
+                    if(latestWeek == null){
+                        throw NullPointerException("No Week found")
                     }
-                    append("}")
+                    val sets = workoutRepository.getSetsForWeek(latestWeek).getOrNull()
+                        ?: throw NullPointerException("No sets found")
+
+                    string += buildString {
+                        append("{")
+                        append("slotUid:${it.uid}")
+                        append("-")
+                        sets.sortedBy { it.index }.onEach {
+                            append("setUid:${it.uid}")
+                            append("-")
+                        }
+                        append("}")
+                    }
                 }
             }
-            Log.d("Test" , "Session content = $string")
             Result.success(
                 WorkoutSession(
                     uid = System.currentTimeMillis() ,

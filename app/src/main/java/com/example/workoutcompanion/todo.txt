@@ -9,5 +9,7 @@
     //TODO implement the pie chart for volume
     //TODO add tooltips in each screen to descibe hidden gestures inside the app
     //TODO convert main navigation to viewPager
+    //TODO IDEA---> add a positive snackbar to display successfull changes
     //TOOO imlement delete feature on the workouts
-    //TODO support multiple progression schemas (add on the slot a key for the schema)
+    //TODO support multiple progression schemas (add on the slot a key for the schema) ---Don't , it will be far more complex for a small impact---
+    //TODO fix the problem where the schema screen is not updated properly ---DONE---

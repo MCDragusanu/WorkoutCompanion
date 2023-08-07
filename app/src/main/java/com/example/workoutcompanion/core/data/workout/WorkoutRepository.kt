@@ -11,29 +11,28 @@ import com.example.workoutcompanion.workout_designer.progression_overload.Traini
 
 interface WorkoutRepository {
 
-   suspend fun getLatestOneRepMax(uid : Int , userUid:String) : OneRepMax?
-   suspend fun addWorkoutMetadata(workoutMetadata : WorkoutMetadata)
-   suspend fun addExerciseSlot(slot : ExerciseSlot)
-   suspend fun addWeek(startingPoint : Week)
-   suspend fun addSets(vararg  sets:SetSlot)
-   suspend fun getWorkouts(uid : String) : List<WorkoutMetadata>
-   suspend fun getSlotsForWorkout(uid : Long) : List<ExerciseSlot>
-   suspend fun getWeeksForSlot(slot : ExerciseSlot) : List<Week>
-   suspend fun getSetsForWeek(week : Week):List<SetSlot>
-   suspend fun addOneRepMax(oneRepMax : OneRepMax)
-   suspend fun updateWeek(newWeek : Week)
-   suspend fun updateSet(newSet : SetSlot)
-   suspend fun removeProgression(week : Week)
-   suspend fun getWorkoutByUid(_workoutUid : Long) : WorkoutMetadata?
-   suspend  fun deleteExerciseSlot(slot : ExerciseSlot)
-   suspend fun updateMetadata(value : WorkoutMetadata)
-   suspend  fun removeSet(set : SetSlot)
-
+   suspend fun getLatestOneRepMax(uid : Int , userUid:String) : Result<OneRepMax?>
+   suspend fun addWorkoutMetadata(workoutMetadata : WorkoutMetadata):Result<Nothing?>
+   suspend fun addExerciseSlot(slot : ExerciseSlot):Result<Nothing?>
+   suspend fun addWeek(startingPoint : Week):Result<Nothing?>
+   suspend fun addSets(vararg  sets:SetSlot):Result<Nothing?>
+   suspend fun getWorkouts(uid : String) :Result<List<WorkoutMetadata>>
+   suspend fun getSlotsForWorkout(uid : Long) :Result<List<ExerciseSlot>>
+   suspend fun getWeeksForSlot(slot : ExerciseSlot) : Result<List<Week>>
+   suspend fun getSetsForWeek(week : Week):Result<List<SetSlot>>
+   suspend fun addOneRepMax(oneRepMax : OneRepMax):Result<Nothing?>
+   suspend fun updateWeek(newWeek : Week):Result<Nothing?>
+   suspend fun updateSet(newSet : SetSlot):Result<Nothing?>
+   suspend fun removeProgression(week : Week):Result<Nothing?>
+   suspend fun getWorkoutByUid(_workoutUid : Long) :Result< WorkoutMetadata?>
+   suspend  fun deleteExerciseSlot(slot : ExerciseSlot):Result<Nothing?>
+   suspend fun updateMetadata(value : WorkoutMetadata):Result<Nothing?>
+   suspend  fun removeSet(set : SetSlot):Result<Nothing?>
    suspend fun getTrainingParameters(userUid : String):Result<TrainingParameters?>
-  suspend fun createInitialParameters(uid : String)
-  suspend fun updateSchema(schema : ExerciseProgressionSchema ,   parametersMetadata : Long)
-   suspend fun getLatestWeek(uid : Long) : Week
-   suspend fun addSession(session : WorkoutSession)
+  suspend fun createInitialParameters(uid : String):Result<Nothing?>
+  suspend fun updateSchema(schema : ExerciseProgressionSchema ,   parametersMetadata : Long):Result<Nothing?>
+   suspend fun getLatestWeek(uid : Long) :Result<Week?>
+   suspend fun addSession(session : WorkoutSession):Result<Nothing?>
    suspend fun getSession(sessionUid : Long):Result<WorkoutSession?>
 
    /*suspend fun addExerciseSlot(slot : ExerciseSlot) : Result<Nothing?>

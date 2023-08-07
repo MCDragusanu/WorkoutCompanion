@@ -116,34 +116,37 @@ class WorkoutScreenViewModel @Inject constructor(private val progressionManager:
     fun retrieveWorkout(workoutUid : Long) {
         _workoutUid = workoutUid
         viewModelScope.launch(Dispatchers.IO) {
-            try{
-                val metadatata = workoutRepository.getWorkoutByUid(_workoutUid)
+            try {
+                val metadata = workoutRepository.getWorkoutByUid(_workoutUid).onFailure { onError(Exception(it)) }.getOrNull()
 
 
-                if (metadatata == null) {
+                if (metadata == null) {
                     Log.d("Test" , "No workout found")
                     return@launch
                 }
-                val slots = workoutRepository.getSlotsForWorkout(_workoutUid)
+                workoutRepository.getSlotsForWorkout(_workoutUid).onFailure {
+                    onError(Exception(it))
+                }.onSuccess { slots ->
+                    val weeks = mutableListOf<Week>()
 
+                    slots.onEach {
+                        weeks += workoutRepository.getWeeksForSlot(it).getOrNull()?: emptyList()
+                    }
+                    val setList = mutableListOf<SetSlot>()
+                    weeks.onEach {
+                        val sets = workoutRepository.getSetsForWeek(it).getOrNull()?: emptyList()
+                        setList += sets
+                    }
 
-                val weeks = mutableListOf<Week>()
-
-                slots.onEach {
-                    weeks += workoutRepository.getWeeksForSlot(it)
+                    _metadata.update { metadata }
+                    _sets.update { setList }
+                    _weeks.update { weeks }
+                    _exerciseSlots.update { slots }
+                    _isLoading.update { false }
                 }
-                val setList = mutableListOf<SetSlot>()
-                weeks.onEach {
-                    val sets = workoutRepository.getSetsForWeek(it)
-                    setList += sets
-                }
 
-                _metadata.update { metadatata }
-                _sets.update { setList }
-                _weeks.update { weeks }
-                _exerciseSlots.update { slots }
-                _isLoading.update { false }
-            }catch (e:Exception){
+
+            } catch (e : Exception) {
                 onError(e)
             }
         }
@@ -352,7 +355,7 @@ class WorkoutScreenViewModel @Inject constructor(private val progressionManager:
                 _profile?.let {
 
                     val oneRepMaxWeight =
-                        workoutRepository.getLatestOneRepMax(exercise.uid , it.uid)
+                        workoutRepository.getLatestOneRepMax(exercise.uid , it.uid).getOrNull()
 
                     oneRepMaxWeight?.let {
                         val startingPoint = progressionManager.findStartingPoint(

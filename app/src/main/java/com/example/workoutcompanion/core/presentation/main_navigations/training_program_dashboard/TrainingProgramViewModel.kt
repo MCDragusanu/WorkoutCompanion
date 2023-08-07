@@ -57,15 +57,21 @@ class TrainingProgramViewModel @Inject constructor(
                     "Training Program Screen :: ${it?.uid ?: "No user profile retrieved"}"
                 )
                 _profile = it
-                _profile?.let {user->
-
-                    workoutRepository.getWorkouts(user.uid).sortedBy { it.dayOfWeek }
-                        .onEach { metadata ->
-                            _workouts.update {
-                                it + metadata
+                _profile?.let { user ->
+                    workoutRepository.getWorkouts(user.uid).onFailure {
+                        it.printStackTrace()
+                    }.onSuccess {
+                        it.sortedBy { it.dayOfWeek }
+                            .onEach { metadata ->
+                                _workouts.update {
+                                    it + metadata
+                                }
                             }
-                        }
-                    _trainingParameters.update {  workoutRepository.getTrainingParameters(user.uid).getOrNull() }
+                    }
+
+                    _trainingParameters.update {
+                        workoutRepository.getTrainingParameters(user.uid).getOrNull()
+                    }
                 }
             }.onFailure {
                 Log.d("Test" , it.stackTraceToString())
@@ -121,7 +127,7 @@ class TrainingProgramViewModel @Inject constructor(
                 val oneRepMax = workoutRepository.getLatestOneRepMax(
                     it.uid ,
                     _profile?.uid ?: guestProfile.uid
-                )
+                ).getOrNull()
 
 
                 oneRepMax?.let {
@@ -198,7 +204,11 @@ class TrainingProgramViewModel @Inject constructor(
                 )
 
             }
-            workoutRepository.createInitialParameters(_profile?.uid ?: guestProfile.uid)
+            workoutRepository.createInitialParameters(_profile?.uid ?: guestProfile.uid).onFailure {
+
+            }.onSuccess {
+
+            }
         }
     }
 
@@ -212,7 +222,11 @@ class TrainingProgramViewModel @Inject constructor(
                 }
 
             }
-            workoutRepository.updateSchema(schema , _trainingParameters.value?.uid?:0)
+            workoutRepository.updateSchema(schema , _trainingParameters.value?.uid ?: 0).onFailure {
+
+            }.onSuccess {
+
+            }
         }
     }
 

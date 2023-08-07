@@ -34,148 +34,257 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
                              private val progressionSchemaDao : ProgressionSchemaDao,
                              private val trainingParametersDao : TrainingParametersDao,
                              ):WorkoutRepository {
-    override suspend fun getLatestOneRepMax(uid : Int , userUid : String) : OneRepMax? {
+    override suspend fun getLatestOneRepMax(uid : Int , userUid : String) :Result<OneRepMax?> {
         return try {
-            oneRepMaxDao.getLatestRecord(uid , userUid)
+            Result.success(oneRepMaxDao.getLatestRecord(uid , userUid))
         } catch (e : Exception) {
             e.printStackTrace()
-            null
+            Result.failure(WorkoutRepositoryException(requestName = "Retrieve Latest Record" ,reason = e.localizedMessage?:"Unknown Error"))
         }
     }
 
-    override suspend fun addWorkoutMetadata(workoutMetadata : WorkoutMetadata) {
-        try {
+    override suspend fun addWorkoutMetadata(workoutMetadata : WorkoutMetadata):Result<Nothing?> {
+        return try {
             workoutMetadataDao.addNewWorkout(workoutMetadata)
+            Result.success(null)
         } catch (e : Exception) {
             e.printStackTrace()
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Add Workout" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
         }
     }
 
-    override suspend fun addExerciseSlot(slot : ExerciseSlot) {
-        try {
+    override suspend fun addExerciseSlot(slot : ExerciseSlot):Result<Nothing?> {
+        return try {
             exerciseSlotDao.addExerciseSlot(slot)
+            Result.success(null)
         } catch (e : Exception) {
             e.printStackTrace()
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Add Exercise " ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
         }
     }
 
-    override suspend fun addWeek(week : Week) {
-        try {
+    override suspend fun addWeek(week : Week):Result<Nothing?> {
+        return try {
             weekDao.addWeek(week = week)
+            Result.success(null)
         } catch (e : Exception) {
             e.printStackTrace()
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Add new Week" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
         }
     }
 
-    override suspend fun addSets(vararg sets : SetSlot) {
+    override suspend fun addSets(vararg sets : SetSlot):Result<Nothing?> {
+        var error :Exception? = null
         CoroutineScope(Dispatchers.IO).launch {
-            try {
+           try {
                 sets.onEach {
                     async { setSlotDao.addSet(it) }
                 }
             } catch (e : Exception) {
                 e.printStackTrace()
+               error = WorkoutRepositoryException(requestName = "Add Sets" ,reason = e.localizedMessage?:"Unknown Error")
             }
         }
+        return if(error!=null) Result.failure(error!!)
+        else Result.success(null)
     }
 
-    override suspend fun getWorkouts(uid : String) : List<WorkoutMetadata> {
+    override suspend fun getWorkouts(uid : String) : Result<List<WorkoutMetadata>> {
         return try {
-            workoutMetadataDao.getWorkoutsOfUser(uid)
+            Result.success(workoutMetadataDao.getWorkoutsOfUser(uid))
         } catch (e : Exception) {
             e.printStackTrace()
-            emptyList()
+            Result.failure(WorkoutRepositoryException(requestName = "Get Workout" ,reason = e.localizedMessage?:"Unknown Error"))
         }
     }
 
-    override suspend fun getSlotsForWorkout(uid : Long) : List<ExerciseSlot> {
+    override suspend fun getSlotsForWorkout(uid : Long) : Result<List<ExerciseSlot>> {
         return try {
-            exerciseSlotDao.getSlotsForWorkout(uid)
+            Result.success(exerciseSlotDao.getSlotsForWorkout(uid))
         } catch (e : Exception) {
             e.printStackTrace()
-            emptyList()
+            Result.failure(WorkoutRepositoryException(requestName = "Retrieve Exercises" ,reason = e.localizedMessage?:"Unknown Error"))
         }
     }
 
-    override suspend fun getWeeksForSlot(slot : ExerciseSlot) : List<Week> {
+    override suspend fun getWeeksForSlot(slot : ExerciseSlot) : Result<List<Week>> {
         return try {
-            weekDao.getWeeksForSlotInASCOrder(slot.uid)
+            Result.success(weekDao.getWeeksForSlotInASCOrder(slot.uid))
         } catch (e : Exception) {
             e.printStackTrace()
-            emptyList()
+
+            Result.failure(WorkoutRepositoryException(requestName = "Retrieve Records" ,reason = e.localizedMessage?:"Unknown Error"))
         }
     }
 
-    override suspend fun getSetsForWeek(week : Week) : List<SetSlot> {
+    override suspend fun getSetsForWeek(week : Week) : Result<List<SetSlot>> {
         return try {
-            setSlotDao.getAllSetsForWeek(weekUid = week.uid)
+            Result.success(setSlotDao.getAllSetsForWeek(weekUid = week.uid))
         } catch (e : Exception) {
             e.printStackTrace()
-            emptyList()
+            e.printStackTrace()
+            Result.failure(WorkoutRepositoryException(requestName = "Retrieve Sets" ,reason = e.localizedMessage?:"Unknown Error"))
         }
     }
 
-    override suspend fun addOneRepMax(oneRepMax : OneRepMax) {
-        oneRepMaxDao.addOneRepMax(oneRepMax)
+    override suspend fun addOneRepMax(oneRepMax : OneRepMax):Result<Nothing?> {
+       return try {
+            oneRepMaxDao.addOneRepMax(oneRepMax)
+            Result.success(null)
+        }catch (e:Exception){
+            e.printStackTrace()
+            e.printStackTrace()
+            Result.failure(WorkoutRepositoryException(requestName = "Add Record" ,reason = e.localizedMessage?:"Unknown Error"))
+        }
     }
 
-    override suspend fun updateWeek(newWeek : Week) {
-        Log.d("Test" , "week will be updated")
-        weekDao.udpateWeek(newWeek)
+    override suspend fun updateWeek(newWeek : Week):Result<Nothing?> {
+        return try {
+            weekDao.udpateWeek(newWeek)
+            Result.success(null)
+        }catch (e:Exception){
+            e.printStackTrace()
+
+            Result.failure(WorkoutRepositoryException(requestName = "Update Progression" ,reason = e.localizedMessage?:"Unknown Error"))
+        }
     }
 
-    override suspend fun updateSet(newSet : SetSlot) {
-        Log.d("Test" , "set ${newSet.uid} will be updated")
-        try {
+    override suspend fun updateSet(newSet : SetSlot):Result<Nothing?> {
+        return try {
             setSlotDao.updateSetSlot(
                 newSet.weightInKgs ,
                 newSet.reps ,
                 newSet.index ,
                 uid = newSet.uid
             )
+
+            Result.success(null)
         } catch (e : Exception) {
             e.printStackTrace()
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Update Set" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
         }
     }
 
-    override suspend fun removeProgression(week : Week) {
-        weekDao.deleteWeek(week = week)
-    }
-
-    override suspend fun getWorkoutByUid(_workoutUid : Long) : WorkoutMetadata? {
+    override suspend fun removeProgression(week : Week):Result<Nothing?> {
         return try {
-            workoutMetadataDao.getWorkoutByUid(_workoutUid)
+            weekDao.deleteWeek(week)
+            Result.success(null)
+        }catch (e:Exception){
+            e.printStackTrace()
+            e.printStackTrace()
+            Result.failure(WorkoutRepositoryException(requestName = "Delete Progression" ,reason = e.localizedMessage?:"Unknown Error"))
+        }
+
+    }
+
+    override suspend fun getWorkoutByUid(_workoutUid : Long) :Result<WorkoutMetadata?> {
+
+        return try {
+
+            Result.success(workoutMetadataDao.getWorkoutByUid(_workoutUid))
         } catch (e : Exception) {
             e.printStackTrace()
-            null
+            e.printStackTrace()
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Get Workout" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
         }
     }
 
-    override suspend fun deleteExerciseSlot(slot : ExerciseSlot) {
-        weekDao.getWeeksForSlotInASCOrder(slot.uid).onEach {
-            setSlotDao.deleteAllSetsForWeek(it.uid)
-            weekDao.deleteWeek(it)
+    override suspend fun deleteExerciseSlot(slot : ExerciseSlot):Result<Nothing?> {
+        return try{
+            weekDao.getWeeksForSlotInASCOrder(slot.uid).onEach {
+                setSlotDao.deleteAllSetsForWeek(it.uid)
+                weekDao.deleteWeek(it)
+            }
+            exerciseSlotDao.deleteSlot(slot)
+            Result.success(null)
+        }catch (e:Exception){
+            e.printStackTrace()
+            Result.failure(WorkoutRepositoryException(
+                requestName = "Delete Exercise" ,
+                reason = e.localizedMessage ?: "Unknown Error"
+            ))
         }
-        exerciseSlotDao.deleteSlot(slot)
     }
 
-    override suspend fun updateMetadata(value : WorkoutMetadata) {
-        workoutMetadataDao.updateWorkout(value)
+    override suspend fun updateMetadata(value : WorkoutMetadata):Result<Nothing?> {
+
+        return try {
+            workoutMetadataDao.updateWorkout(value)
+            Result.success(null)
+        } catch (e : Exception) {
+            e.printStackTrace()
+            e.printStackTrace()
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Update Workout" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
+        }
     }
 
-    override suspend fun removeSet(set : SetSlot) {
-        setSlotDao.deleteSet(set)
+    override suspend fun removeSet(set : SetSlot):Result<Nothing?> {
+
+        return try {
+            setSlotDao.deleteSet(set)
+            Result.success(null)
+        } catch (e : Exception) {
+            e.printStackTrace()
+            e.printStackTrace()
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Remove Set" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
+        }
     }
 
-    override suspend fun getTrainingParameters(userUid : String) : Result<TrainingParameters?> =
-        RetrieveTrainingParameters().exercute(
-            userUid ,
-            trainingParametersDao ,
-            progressionSchemaDao
-        )
+    override suspend fun getTrainingParameters(userUid : String) : Result<TrainingParameters?> {
+        return try{
+            RetrieveTrainingParameters().exercute(
+                userUid ,
+                trainingParametersDao ,
+                progressionSchemaDao
+            )
+        }catch (e:Exception){
+            e.printStackTrace()
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Get Training Parameters" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
+        }
+    }
 
-    override suspend fun createInitialParameters(uid : String) {
-        try {
+    override suspend fun createInitialParameters(uid : String):Result<Nothing?> {
+       return try {
             val metadataUid = System.currentTimeMillis()
             val metadatada = TrainingParametersMetadata(
                 uid = metadataUid ,
@@ -213,36 +322,73 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
 
             progressionSchemaDao.addSchema(schema , schema2 , schema3)
             trainingParametersDao.addParameters(metadatada)
+           Result.success(null)
 
         } catch (e : Exception) {
             e.printStackTrace()
+           Result.failure(
+               WorkoutRepositoryException(
+                   requestName = "Create Default Training Parameters" ,
+                   reason = e.localizedMessage ?: "Unknown Error"
+               )
+           )
         }
     }
 
     override suspend fun updateSchema(
         schema : ExerciseProgressionSchema ,
         parametersMetadata : Long
-    ) {
-        Log.d("Test" , "metadataUid = ${parametersMetadata} ,schemaUid = ${schema.uid}")
-        progressionSchemaDao.updateSchema(
-            ProgressionSchema(
-                repLowerBound = schema.repRange.first ,
-                repUpperBound = schema.repRange.last ,
-                metadataUid = parametersMetadata ,
-                appliedTo = schema.appliedTo.ordinal,
-                repIncreaseRate = schema.repIncreaseRate,
-                weightIncrementPercent = schema.weightIncrementCoeff,
-                smallestWeightIncrementAvailable = schema.smallestWeightIncrementAvailable
-            ).apply { uid = schema.uid }
-        )
+    ):Result<Nothing?> {
+
+        return try{
+            progressionSchemaDao.updateSchema(
+                ProgressionSchema(
+                    repLowerBound = schema.repRange.first ,
+                    repUpperBound = schema.repRange.last ,
+                    metadataUid = parametersMetadata ,
+                    appliedTo = schema.appliedTo.ordinal ,
+                    repIncreaseRate = schema.repIncreaseRate ,
+                    weightIncrementPercent = schema.weightIncrementCoeff ,
+                    smallestWeightIncrementAvailable = schema.smallestWeightIncrementAvailable
+                ).apply { uid = schema.uid }
+            )
+            Result.success(null)
+        } catch (e : Exception) {
+            e.printStackTrace()
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Update Progression Schema" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
+        }
     }
 
-    override suspend fun getLatestWeek(uid : Long) : Week {
-       return weekDao.getWeeksForSlotInASCOrder(uid).last()
+    override suspend fun getLatestWeek(uid : Long) : Result<Week> {
+       return try{ Result.success(weekDao.getWeeksForSlotInASCOrder(uid).last()) }catch (e:Exception){
+           e.printStackTrace()
+           Result.failure(
+               WorkoutRepositoryException(
+                   requestName = "Get Latest Progression" ,
+                   reason = e.localizedMessage ?: "Unknown Error"
+               )
+           )
+       }
     }
 
-    override suspend fun addSession(session : WorkoutSession) {
-        workoutSessionDao.addSession(session)
+    override suspend fun addSession(session : WorkoutSession):Result<Nothing?> {
+        return try {
+            workoutSessionDao.addSession(session)
+            Result.success(null)
+        } catch (e : Exception) {
+            e.printStackTrace()
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Update Progression Schema" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
+        }
     }
 
     override suspend fun getSession(sessionUid : Long) : Result<WorkoutSession?> {
