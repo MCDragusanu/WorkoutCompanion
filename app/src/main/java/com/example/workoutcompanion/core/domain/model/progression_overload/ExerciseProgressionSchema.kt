@@ -6,6 +6,9 @@ import com.example.workoutcompanion.core.domain.model.exercise.Exercise
 data class ExerciseProgressionSchema(
                                      val trainingParametersUid:Long ,
                                      val repRange:IntRange ,
+                                     val warmUpSetCount:Int,
+                                     val warmUpRepCount:Int,
+                                     val startingWeightPercent:Double,
                                      val appliedTo: Exercise.Companion.ExerciseCategory ,
                                      val weightIncrementCoeff:Double ,
                                      val smallestWeightIncrementAvailable:Double ,
@@ -21,6 +24,9 @@ data class ExerciseProgressionSchema(
             appliedTo = Exercise.Companion.ExerciseCategory.PrimaryCompound ,
             trainingParametersUid = -1 ,
             repRange = (4..8),
+            warmUpSetCount = 3,
+            warmUpRepCount = 15,
+            startingWeightPercent = 50.0,
             weightIncrementCoeff = SMALL_GROWTH_COEFF ,
             smallestWeightIncrementAvailable = 2.5,
             repIncreaseRate = 2
@@ -29,6 +35,9 @@ data class ExerciseProgressionSchema(
         val secondaryCompoundSchema = ExerciseProgressionSchema(
             appliedTo = Exercise.Companion.ExerciseCategory.SecondaryCompound ,
             trainingParametersUid = -1 ,
+            warmUpSetCount = 1,
+            warmUpRepCount = 15,
+            startingWeightPercent = 75.0,
             repRange = (10..15),
             weightIncrementCoeff = SMALL_GROWTH_COEFF ,
             smallestWeightIncrementAvailable = 2.5,
@@ -38,6 +47,9 @@ data class ExerciseProgressionSchema(
         val isolationSchema = ExerciseProgressionSchema(
             appliedTo = Exercise.Companion.ExerciseCategory.Isolation ,
             trainingParametersUid = -1 ,
+            warmUpSetCount = 1,
+            warmUpRepCount = 10,
+            startingWeightPercent = 75.0,
             repRange = (10..15),
             weightIncrementCoeff = SMALL_GROWTH_COEFF ,
             smallestWeightIncrementAvailable = 2.5,

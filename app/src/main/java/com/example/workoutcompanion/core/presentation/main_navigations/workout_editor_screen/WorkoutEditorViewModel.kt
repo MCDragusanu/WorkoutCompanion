@@ -173,7 +173,7 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
                     progressionManager.generateSolution(previousWeek , getSchema(slot.category))
                         .copy(uid = System.currentTimeMillis() , exerciseSlotUid = slot.uid)
 
-                val newSets = GenerateSets().execute(newWeek)
+                val newSets = GenerateSets().execute(newWeek , getSchema(slot.category))
 
                 workoutRepository.addWeek(newWeek)
                 workoutRepository.addSets(*newSets.toTypedArray())
@@ -215,7 +215,7 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
                     schema = getSchema(slot.category)
                 )
 
-                val sets = GenerateSets().execute(startingPoint)
+                val sets = GenerateSets().execute(startingPoint , getSchema(slot.category))
 
                 workoutRepository.addOneRepMax(
                     OneRepMax(
@@ -325,7 +325,7 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
         viewModelScope.launch(Dispatchers.IO) {
             try{
                 val setIndex = _sets.value.count { it.weekUid == week.uid }
-                val set = SetSlot(weightInKgs = weight , reps = reps , week.uid , setIndex)
+                val set = SetSlot(weightInKgs = weight , reps = reps , week.uid , type = SetSlot.WorkingSet,setIndex)
                 _sets.update { it + set }
                 workoutRepository.addSets(sets = arrayOf(set))
             }catch (e:Exception){
@@ -370,7 +370,7 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
                             schema = getSchema(slot.category)
                         )
 
-                        val sets = GenerateSets().execute(startingPoint)
+                        val sets = GenerateSets().execute(startingPoint , getSchema(slot.category))
 
                         workoutRepository.addSets(*sets.toTypedArray())
                         workoutRepository.addWeek(startingPoint)
@@ -414,5 +414,9 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
             if(!hasStartingPoint) result = false
         }
         return result
+    }
+
+    fun generateWarmUpSets(it : Week) {
+
     }
 }

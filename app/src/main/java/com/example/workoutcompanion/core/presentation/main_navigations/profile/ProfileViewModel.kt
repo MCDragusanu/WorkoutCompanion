@@ -18,25 +18,14 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(@ComponentType(false) private val userRepository : ProfileRepository , @ComponentType(false) private val appStateManager : AppStateManager):ViewModel() {
-    private var _userUid : String? = null
-    private val _profile = MutableStateFlow<UserProfile?>(null)
-    val profile = _profile.asStateFlow()
 
-    private var appState:WorkoutCompanionAppState? = null
-    fun retrieveAppState(userUid:String){
-        viewModelScope.launch(Dispatchers.IO){
-            appStateManager.getAppState(userUid).collect{ newState->
-                if(newState == null ){
-                    Log.d("Test" , "Profile ViewModel ::Current App State is null")
-                }
-                appState = newState
-                newState?.let {
-                    _profile.update {  newState.userProfile}
-                    Log.d("Test" , "Profile ViewModel ::Current App State has been retrieved")
-                    Log.d("Test" , "Received user = ${it.userProfile.uid}" )
-                }
-            }
-        }
+
+
+    private val _appState = MutableStateFlow<WorkoutCompanionAppState?>(null)
+    val appState = _appState.asStateFlow()
+
+    fun setAppState(initial : WorkoutCompanionAppState?){
+            _appState.update { initial }
     }
 
 }

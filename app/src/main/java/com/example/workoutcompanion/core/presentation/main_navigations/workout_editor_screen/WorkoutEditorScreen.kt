@@ -5,6 +5,8 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -147,6 +149,9 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                         } ,
                         onRemoveSet = {
                             viewModel.removeSet(it)
+                        },
+                        onGenerateWarmUpSets = {
+                          //  viewModel.generateWarmUpSets(it)
                         }
                     )
                 }
@@ -435,9 +440,9 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                                 color = MaterialTheme.colorScheme.onBackground.copy(0.5f)
                             )
                             Text(
-                                text = if (metadata.dayOfWeek > 7) "Not set" else stringArrayResource(
+                                text = if (metadata.dayOfWeek >= 7) "Not set" else stringArrayResource(
                                     id = R.array.DaysOfWeek
-                                )[metadata.dayOfWeek] ,
+                                )[metadata.dayOfWeek % 7] ,
                                 style = Typography.headlineSmall
                             )
                         }
@@ -509,7 +514,8 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
         onDeleteExerciseSlot : (ExerciseSlot) -> Unit ,
         onSetChanged : (SetSlot) -> Unit ,
         onAddExercise : () -> Unit ,
-        onRemoveSet : (SetSlot) -> Unit
+        onRemoveSet : (SetSlot) -> Unit,
+        onGenerateWarmUpSets : (Week) -> Unit,
     ) {
         val allWeeks by weeksList.collectAsState()
         val slots by slotList.collectAsState()
@@ -540,7 +546,8 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                         onSubmitStartingPoint = onSubmitStartingPoint ,
                         onSetChanged = onSetChanged ,
                         onDeleteExerciseSlot = onDeleteExerciseSlot ,
-                        onRemoveSet = onRemoveSet
+                        onRemoveSet = onRemoveSet,
+                        onGenerateWarmUpSets = onGenerateWarmUpSets
                     )
 
                 }
@@ -643,11 +650,13 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
         onSubmitStartingPoint : (ExerciseSlot , Int , Double) -> Unit ,
         onSetChanged : (SetSlot) -> Unit ,
         onDeleteExerciseSlot : (ExerciseSlot) -> Unit ,
-        onRemoveSet : (SetSlot) -> Unit
+        onRemoveSet : (SetSlot) -> Unit,
+        onGenerateWarmUpSets : (Week) -> Unit,
     ) {
 
 
         var currentWeek by remember { mutableStateOf(weeks.lastOrNull()) }
+        val lastWeek = weeks.lastOrNull()
         var showDialogue by remember { mutableStateOf(false) }
         var currentSets = if(currentWeek == null) emptyList() else sets.filter { it.weekUid == currentWeek!!.uid }.sortedBy { it.index }
         Card(
@@ -710,7 +719,8 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                             onAddSet = { reps , weight , week ->
                                 onAddSet(reps , weight , week)
                             } ,
-                            isBodyWeight = exercise.isBodyWeight
+                            isBodyWeight = exercise.isBodyWeight,
+                            onGenerateWarmUpSets = onGenerateWarmUpSets
                         )
                     }
                     AnimatedContent(targetState = currentSets) {
@@ -722,16 +732,42 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                                 horizontalAlignment = Alignment.Start ,
                                 verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-
-                                if (it.isEmpty()) {
-                                           Text(text = "No sets found")
-                                } else {
-                                    it.onEach {
+                                val warmUpSets = it.filter{it.type == SetSlot.WarmUp}
+                                val workingSets = it.filter{it.type == SetSlot.WorkingSet}
+                                Row(){
+                                    Text(text = "Warm Up Sets" , style = Typography.labelMedium)
+                                }
+                                if(warmUpSets.isEmpty()){
+                                    Text(text = "No Warm Up Sets" , style = Typography.labelSmall)
+                                }else {
+                                    warmUpSets.onEach {
                                         SetCard(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .wrapContentHeight() ,
                                             setSlot = it ,
+                                            isEditable = currentWeek == lastWeek,
+                                            onSetChanged = onSetChanged ,
+                                            isBodyWeight = exercise.isBodyWeight ,
+                                            onRemoveSet = { toBeRemoved ->
+                                                onRemoveSet(toBeRemoved)
+                                            }
+                                        )
+                                    }
+                                }
+                                Row(){
+                                    Text(text = "Working Sets" , style = Typography.labelMedium)
+                                }
+                                if (workingSets.isEmpty()) {
+                                           Text(text = "No Working Sets")
+                                } else {
+                                    workingSets.onEach {
+                                        SetCard(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .wrapContentHeight() ,
+                                            setSlot = it ,
+                                            isEditable = currentWeek == lastWeek,
                                             onSetChanged = onSetChanged ,
                                             isBodyWeight = exercise.isBodyWeight ,
                                             onRemoveSet = { toBeRemoved ->
@@ -763,9 +799,11 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
     fun SetCard(
         modifier : Modifier ,
         setSlot : SetSlot ,
+        isEditable:Boolean,
         onSetChanged : (SetSlot) -> Unit ,
         isBodyWeight : Boolean ,
         onRemoveSet : (SetSlot) -> Unit
+
     ) {
 
         //TODO if !isBodyWeight display the buttons underneath
@@ -808,10 +846,11 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                         .focusRequester(focusRequester) ,
                     suffix = "Reps" ,
                     text = currentReps ,
+                    isEditable = isEditable,
                     onValueChanged = {
                         currentReps = it
                         isInEditMode = true
-                    })
+                    } , triggerEditMode = { isInEditMode = true })
                 if (!isBodyWeight)
                     Text("X" , color = MaterialTheme.colorScheme.onBackground.copy(0.5f))
                 if (!isBodyWeight) TextBox(
@@ -820,9 +859,12 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                         .height(35.dp)
                         .focusRequester(focusRequester) ,
                     suffix = "Kgs" ,
+                    isEditable = isEditable,
                     text = currentWeight ,
                     onValueChanged = {
                         currentWeight = it
+                        isInEditMode = true
+                    } , triggerEditMode = {
                         isInEditMode = true
                     })
             }
@@ -895,6 +937,7 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
         onWeekClicked : (Week) -> Unit ,
         onAddSet : (Int , Double , Week , ) -> Unit ,
         isBodyWeight : Boolean ,
+        onGenerateWarmUpSets:(Week)->Unit
     ) {
         var showDialogue by remember { mutableStateOf(false) }
         //TODO add a piramid warmup feature, in the exercise progression schema add some parameters that describe the grouth of the warmup
@@ -925,12 +968,18 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                     )
                 )
             }
-            if (currentWeek != null)
+            if (currentWeek != null) {
                 item {
                     AssistChip(onClick = { showDialogue = true } , label = {
                         Text("Add Set" , fontSize = 10.sp)
                     })
                 }
+                item{
+                    AssistChip(onClick = { onGenerateWarmUpSets(currentWeek)} , label = {
+                        Text("Create Warm Up Sets" , fontSize = 10.sp)
+                    })
+                }
+            }
         }
         if (showDialogue) {
             RepsAndWeightDialogue(
@@ -1055,9 +1104,13 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
         modifier : Modifier ,
         suffix : String ,
         text : String ,
+        isEditable:Boolean,
+        triggerEditMode:()->Unit,
         onValueChanged : (String) -> Unit ,
     ) {
         var currentText by remember { mutableStateOf(text) }
+        val interactionSource = MutableInteractionSource()
+        val isClicked =interactionSource.collectIsDraggedAsState()
 
         Row(
             modifier = Modifier.wrapContentSize() ,
@@ -1076,11 +1129,13 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                         .fillMaxHeight()
                         .wrapContentWidth()
                         .padding(12.dp) ,
+                    enabled = isEditable,
                     value = currentText ,
                     onValueChange = {
                         currentText = it
                         onValueChanged(currentText)
                     } ,
+                    interactionSource = interactionSource,
                     textStyle = TextStyle(
                         fontSize = 12.sp ,
                         color = MaterialTheme.colorScheme.onSurface
@@ -1091,6 +1146,9 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                 fontSize = 8.sp ,
                 color = MaterialTheme.colorScheme.onSurface.copy(0.5f)
             )
+        }
+        LaunchedEffect(key1 = isClicked.value ){
+            if(isClicked.value) triggerEditMode()
         }
     }
 }

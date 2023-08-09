@@ -6,7 +6,6 @@ import com.example.workoutcompanion.core.data.workout.training_parameters.Traini
 import com.example.workoutcompanion.core.domain.model.exercise.Exercise
 import com.example.workoutcompanion.core.domain.model.progression_overload.ExerciseProgressionSchema
 import com.example.workoutcompanion.workout_designer.progression_overload.TrainingParameters
-import kotlin.random.Random
 
 class RetrieveTrainingParameters {
 
@@ -26,7 +25,11 @@ class RetrieveTrainingParameters {
                     appliedTo = Exercise.Companion.ExerciseCategory.values()[it.appliedTo] ,
                     weightIncrementCoeff = it.weightIncrementPercent ,
                     smallestWeightIncrementAvailable = it.smallestWeightIncrementAvailable ,
-                    repIncreaseRate = it.repIncreaseRate
+                    repIncreaseRate = it.repIncreaseRate,
+                    startingWeightPercent = it.startingWeightPercent,
+                    warmUpSetCount = it.warmUpSetCount,
+                    warmUpRepCount = it.warmUpRepCount,
+
                 ).apply {
                     this.uid = it.uid
                     Log.d("Test" , "Schema uid retrieved = ${it.uid}")

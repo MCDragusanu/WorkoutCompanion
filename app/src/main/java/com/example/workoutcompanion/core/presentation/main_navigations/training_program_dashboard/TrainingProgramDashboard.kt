@@ -6,6 +6,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
@@ -23,6 +24,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.compose.getPalette
 import com.example.workoutcompanion.common.composables.AnimatedPrimaryButton
 import com.example.workoutcompanion.core.data.workout.workout.WorkoutMetadata
 import com.example.workoutcompanion.core.domain.model.progression_overload.ExerciseProgressionSchema
@@ -30,6 +32,7 @@ import com.example.workoutcompanion.core.presentation.main_navigations.MainNavig
 import com.example.workoutcompanion.ui.Typography
 import com.example.workoutcompanion.ui.cardShapes
 import com.example.workoutcompanion.workout_designer.progression_overload.TrainingParameters
+import kotlinx.coroutines.launch
 
 object TrainingProgramDashboard:MainNavigation.Screens("Training Program Dashboard") {
     @Composable
@@ -42,19 +45,43 @@ object TrainingProgramDashboard:MainNavigation.Screens("Training Program Dashboa
     ) {
 
         val workouts by viewModel.workouts.collectAsState()
-        val parameters by viewModel.trainingParameters.collectAsState()
+        val appState by viewModel.appState.collectAsState()
+        val event by viewModel.snackbarChannel.collectAsState(initial = null)
+        val scope = rememberCoroutineScope()
+        val snackbarHostState = SnackbarHostState()
+        val lazyListState = rememberLazyListState()
         Scaffold(
+            snackbarHost = {
+                event?.let { event ->
+                    SnackbarHost(hostState = snackbarHostState , snackbar = {
+                        Snackbar(
+                            snackbarData = it , containerColor = when (event.type) {
+                                TrainingProgramViewModel.SnackbarEvent.SnackbarType.Error -> {
+                                    MaterialTheme.colorScheme.errorContainer
+                                }
+                                TrainingProgramViewModel.SnackbarEvent.SnackbarType.Neutral -> {
+                                    MaterialTheme.colorScheme.tertiaryContainer
+                                }
+                                TrainingProgramViewModel.SnackbarEvent.SnackbarType.Positive -> {
+                                    getPalette().current.successContainer
+                                }
+                            }
+                        )
+                    })
+                }
+            },
             modifier = Modifier.fillMaxSize() ,
             containerColor = MaterialTheme.colorScheme.background
         ) {
             LazyColumn(
+                state = lazyListState ,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(8.dp) ,
                 horizontalAlignment = Alignment.Start ,
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                item{
+                item {
                     Headline(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -62,24 +89,47 @@ object TrainingProgramDashboard:MainNavigation.Screens("Training Program Dashboa
                     )
                 }
                 item {
-                    TrainingParametersEditor(
-                        Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight() , parameters , addDefaultSchemas = {
-                                viewModel.generateInitialParameters()
-                        } , onUpdateSchema = {appliedTo , schema->
-                            Log.d("Test" , "update triggered")
-                            viewModel.updateSchema(appliedTo , schema)
-                        })
+                    appState?.let {
+
+                        TrainingParametersEditor(
+                            Modifier
+                                .fillMaxWidth()
+                                .wrapContentHeight() , it.trainingParameters , addDefaultSchemas = {
+
+                            } , onUpdateSchema = { appliedTo , schema ->
+                                Log.d("Test" , "update triggered")
+                                viewModel.updateSchema(appliedTo , schema)
+                            })
+                    }
                 }
-                item{
+                item {
                     WorkoutList(modifier = Modifier
                         .fillMaxWidth()
-                        .height((kotlin.math.ceil(workouts.size / 2.0) * 80).dp) , workouts = workouts , createNewWorkout = {
-                        onNavigateToExerciseDatabase()
-                    } , onWorkoutClicked = { navigateToWorkoutScreen(it.uid , it.ownerUid) })
+                        .height((kotlin.math.ceil(workouts.size / 2.0) * 80).dp) ,
+                        workouts = workouts ,
+                        createNewWorkout = {
+                            if (workouts.size < 7)
+                            onNavigateToExerciseDatabase()
+                            else viewModel.showTooManyWorkouts()
+                        } ,
+                        onWorkoutClicked = {
+                            navigateToWorkoutScreen(
+                                it.uid ,
+                                it.ownerUid
+                            )
+                        })
                 }
             }
+        }
+        LaunchedEffect(key1 = event){
+              if(event!=null) scope.launch {
+                  onHideNavBar()
+                  snackbarHostState.showSnackbar(event!!.string , duration = SnackbarDuration.Long)
+              }
+        }
+        LaunchedEffect(key1 = lazyListState.firstVisibleItemScrollOffset){
+            if(lazyListState.firstVisibleItemScrollOffset > 0 ) onHideNavBar()
+            else onShowNavBar()
         }
     }
 
@@ -267,10 +317,15 @@ object TrainingProgramDashboard:MainNavigation.Screens("Training Program Dashboa
                     Box(
                         modifier = Modifier
                             .weight(1f , true)
-                            .height(50.dp).clickable {
-                                onUpdateSchema(schema.appliedTo.ordinal , schema.copy(weightIncrementCoeff = ExerciseProgressionSchema.SMALL_GROWTH_COEFF).apply {
-                                    this.uid = schema.uid
-                                })
+                            .height(50.dp)
+                            .clickable {
+                                onUpdateSchema(
+                                    schema.appliedTo.ordinal ,
+                                    schema
+                                        .copy(weightIncrementCoeff = ExerciseProgressionSchema.SMALL_GROWTH_COEFF)
+                                        .apply {
+                                            this.uid = schema.uid
+                                        })
                                 currentWeightGrowthRate = 0
                             }
                             .background(
@@ -294,11 +349,16 @@ object TrainingProgramDashboard:MainNavigation.Screens("Training Program Dashboa
                     Box(
                         modifier = Modifier
                             .weight(1f , true)
-                            .height(60.dp).clickable {
+                            .height(60.dp)
+                            .clickable {
                                 currentWeightGrowthRate = 1
-                                onUpdateSchema(schema.appliedTo.ordinal , schema.copy(weightIncrementCoeff = ExerciseProgressionSchema.NORMAL_GROWTH_COEFF).apply {
-                                    this.uid = schema.uid
-                                })
+                                onUpdateSchema(
+                                    schema.appliedTo.ordinal ,
+                                    schema
+                                        .copy(weightIncrementCoeff = ExerciseProgressionSchema.NORMAL_GROWTH_COEFF)
+                                        .apply {
+                                            this.uid = schema.uid
+                                        })
                             }
                             .background(
                                 animateColorAsState(if (currentWeightGrowthRate == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer).value ,
@@ -321,10 +381,15 @@ object TrainingProgramDashboard:MainNavigation.Screens("Training Program Dashboa
                     Box(
                         modifier = Modifier
                             .weight(1f , true)
-                            .height(60.dp).clickable {
-                                onUpdateSchema(schema.appliedTo.ordinal , schema.copy(weightIncrementCoeff = ExerciseProgressionSchema.BIG_GROWTH_COEFF).apply {
-                                    this.uid = schema.uid
-                                })
+                            .height(60.dp)
+                            .clickable {
+                                onUpdateSchema(
+                                    schema.appliedTo.ordinal ,
+                                    schema
+                                        .copy(weightIncrementCoeff = ExerciseProgressionSchema.BIG_GROWTH_COEFF)
+                                        .apply {
+                                            this.uid = schema.uid
+                                        })
                                 currentWeightGrowthRate = 2
                             }
                             .background(

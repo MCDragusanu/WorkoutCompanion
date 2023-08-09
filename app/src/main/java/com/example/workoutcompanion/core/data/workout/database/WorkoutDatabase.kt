@@ -30,7 +30,7 @@ import com.example.workoutcompanion.core.data.workout.workout_session.WorkoutSes
     WorkoutSession::class,
     ProgressionSchema::class,
     TrainingParametersMetadata::class] ,
-    version = 2 )
+    version = 1 )
 abstract class WorkoutDatabase:RoomDatabase() {
 
     abstract val exerciseSlotDao : ExerciseSlotDao

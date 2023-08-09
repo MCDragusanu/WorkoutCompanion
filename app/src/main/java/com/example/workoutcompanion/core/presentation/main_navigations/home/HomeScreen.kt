@@ -1,6 +1,5 @@
 package com.example.workoutcompanion.core.presentation.main_navigations.home
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,19 +15,18 @@ import androidx.compose.ui.unit.dp
 import com.example.workoutcompanion.core.data.user_database.common.UserProfile
 import com.example.workoutcompanion.core.presentation.main_navigations.MainNavigation
 import com.example.workoutcompanion.ui.Typography
-import kotlinx.coroutines.flow.onEach
 
 object HomeScreen :MainNavigation.Screens("Home Screen") {
 
     @Composable
     operator fun invoke(viewModel : HomeViewModel , startOnBoardFlow:()->Unit) {
-        val profile by viewModel.profile.onEach {  Log.d("Test" , " HOME SCREEN::${it?.uid?:"No profile received in screen"}")}.collectAsState(null)
+        val appState by viewModel.appState.collectAsState(null)
 
         Scaffold(
             modifier = Modifier.fillMaxSize() ,
             containerColor = MaterialTheme.colorScheme.background
         ) {
-            AnimatedVisibility(visible = profile==null) {
+            AnimatedVisibility(visible = appState==null) {
                 Column(
                     modifier = Modifier.fillMaxSize() ,
                     verticalArrangement = Arrangement.spacedBy(8.dp , Alignment.CenterVertically) ,
@@ -40,8 +38,8 @@ object HomeScreen :MainNavigation.Screens("Home Screen") {
                         modifier = Modifier.clickable { startOnBoardFlow() })
                 }
             }
-            AnimatedVisibility(visible = profile!=null) {
-                profile?.let { currentProfile->
+            AnimatedVisibility(visible = appState!=null) {
+                appState?.let { state->
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -50,7 +48,7 @@ object HomeScreen :MainNavigation.Screens("Home Screen") {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Spacer(modifier = Modifier.size(24.dp))
-                        Headline(profile = currentProfile) {
+                        Headline(profile = state.userProfile) {
 
                         }
                     }

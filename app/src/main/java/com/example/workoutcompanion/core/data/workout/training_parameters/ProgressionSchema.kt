@@ -7,7 +7,10 @@ import androidx.room.PrimaryKey
 data class ProgressionSchema (val repLowerBound:Int ,
                               val metadataUid:Long ,
                               val repUpperBound : Int ,
-                              val appliedTo:Int,
+                              val warmUpSetCount:Int ,
+                              val warmUpRepCount:Int ,
+                              val startingWeightPercent:Double ,
+                              val appliedTo:Int ,
                               val weightIncrementPercent:Double ,
                               val repIncreaseRate:Int ,
                               val smallestWeightIncrementAvailable:Double){

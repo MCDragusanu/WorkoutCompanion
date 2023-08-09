@@ -9,22 +9,27 @@ import com.example.workoutcompanion.core.data.user_database.common.ProfileReposi
 import com.example.workoutcompanion.core.data.user_database.common.UserProfile
 import com.example.workoutcompanion.core.data.user_database.common.guestProfile
 import com.example.workoutcompanion.core.data.workout.WorkoutRepository
+import com.example.workoutcompanion.core.data.workout.WorkoutRepositoryException
 import com.example.workoutcompanion.core.data.workout.exercise_slot.ExerciseSlot
 import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot
 import com.example.workoutcompanion.core.data.workout.week.Week
 import com.example.workoutcompanion.core.data.workout.workout.WorkoutMetadata
 import com.example.workoutcompanion.core.domain.model.exercise.Exercise
 import com.example.workoutcompanion.core.domain.model.progression_overload.ExerciseProgressionSchema
+import com.example.workoutcompanion.core.domain.use_cases.GenerateSets
 import com.example.workoutcompanion.core.presentation.app_state.AppStateManager
 import com.example.workoutcompanion.core.presentation.app_state.WorkoutCompanionAppState
 import com.example.workoutcompanion.workout_designer.progression_overload.ProgressionOverloadManager
 import com.example.workoutcompanion.workout_designer.progression_overload.TrainingParameters
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 
@@ -42,49 +47,34 @@ class TrainingProgramViewModel @Inject constructor(
     private val _workouts = MutableStateFlow<List<WorkoutMetadata>>(emptyList())
     val workouts = _workouts.asStateFlow()
 
-    private var _profile : UserProfile? = null
+    private val _appState = MutableStateFlow<WorkoutCompanionAppState?>(null)
+    val appState = _appState.asStateFlow()
 
+    private val _snackbarChannel = Channel<SnackbarEvent?>()
+    val snackbarChannel = _snackbarChannel.receiveAsFlow()
 
-    private var _trainingParameters = MutableStateFlow<TrainingParameters?>(null)
-    val trainingParameters = _trainingParameters.asStateFlow()
+    fun handleError(exception : Throwable) {
+        exception.printStackTrace()
+        viewModelScope.launch {
+            _snackbarChannel.send(
+                SnackbarEvent(
+                    exception.localizedMessage ?: "Unknown Error" ,
+                    type = SnackbarEvent.SnackbarType.Error
+                )
+            )
+        }
+    }
+    fun setAppState(initial:WorkoutCompanionAppState?) {
 
-
-    private var _userUid : String? = null
-
-
-    private var appState: WorkoutCompanionAppState? = null
-    fun retrieveAppState(userUid:String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            appStateManager.getAppState(userUid).collect { newState ->
-                if (newState == null) {
-                    Log.d("Test" , "Training Program ViewModel ::Current App State is null")
-                }
-                appState = newState
-                newState?.let { new ->
-                    _profile = new.userProfile
-                    _trainingParameters.update { new.trainingParameters }
-                    Log.d(
-                        "Test" ,
-                        "Training Program ViewModel ::Current App State has been updated"
-                    )
-                    Log.d("Test" , "Received user = ${new.userProfile.uid}" )
-                }
-                _profile?.let { user ->
-                    workoutRepository.getWorkouts(user.uid).onFailure {
-                        it.printStackTrace()
-                    }.onSuccess {
-                        it.sortedBy { it.dayOfWeek }
-                            .onEach { metadata ->
-                                _workouts.update {
-                                    it + metadata
-                                }
-                            }
+        _appState.update { initial }
+        _appState.value?.let { appState ->
+            viewModelScope.launch(Dispatchers.IO) {
+                workoutRepository.getWorkouts(appState.userProfile.uid)
+                    .onFailure { handleError(it) }.onSuccess {
+                        it.sortedBy { it.dayOfWeek }.onEach { newWorkout ->
+                            _workouts.update { it + newWorkout }
+                        }
                     }
-
-                    _trainingParameters.update {
-                        workoutRepository.getTrainingParameters(user.uid).getOrNull()
-                    }
-                }
             }
         }
     }
@@ -98,7 +88,7 @@ class TrainingProgramViewModel @Inject constructor(
             // Create metadata for the new workout
             val workoutMetadata = WorkoutMetadata(
                 uid = workoutUid ,
-                ownerUid = appState?.userProfile?.uid?: guestProfile.uid ,
+                ownerUid = appState.value?.userProfile?.uid ?: guestProfile.uid ,
                 name = "Workout #${_workouts.value.size + 1}" ,
                 description = "" ,
                 dayOfWeek = _workouts.value.size
@@ -138,8 +128,8 @@ class TrainingProgramViewModel @Inject constructor(
                 // Get the latest one-rep max value for the exercise from the repository
                 val oneRepMax = workoutRepository.getLatestOneRepMax(
                     it.uid ,
-                    _profile?.uid ?: guestProfile.uid
-                ).getOrNull()
+                    appState.value?.userProfile?.uid ?: guestProfile.uid
+                ).onFailure { handleError(it) }.getOrNull()
 
 
                 oneRepMax?.let {
@@ -155,41 +145,37 @@ class TrainingProgramViewModel @Inject constructor(
                     )
 
                     // Add the new week to the workout repository
-                    workoutRepository.addWeek(startingPoint)
+                    workoutRepository.addWeek(startingPoint).onFailure { handleError(it) }
 
-                    val setList = mutableListOf<SetSlot>()
+
 
                     // Generate sets for the starting point
-                    repeat(startingPoint.sets) {
-                        val set = SetSlot(
-                            weightInKgs = startingPoint.weightInKgs ,
-                            reps = startingPoint.reps ,
-                            index = it ,
-                            weekUid = startingPoint.uid
-                        )
-                        setList.add(set)
-                    }
-
+                    val setList =GenerateSets().execute(startingPoint ,getSchema(slot.category))
 
                     // Add the sets to the workout repository
-                    workoutRepository.addSets(*setList.toTypedArray())
-
-
+                    workoutRepository.addSets(*setList.toTypedArray()).onFailure { handleError(it) }
                 }
-
             }
             _workouts.update {
                 it + workoutMetadata
+            }
+            withContext(Dispatchers.Main.immediate) {
+                _snackbarChannel.send(
+                    SnackbarEvent(
+                        "Workout Created!" ,
+                        SnackbarEvent.SnackbarType.Positive
+                    )
+                )
             }
         }
     }
 
     private inline fun getSchema(int : Int) = when (int) {
-        Exercise.Companion.ExerciseCategory.Isolation.ordinal -> _trainingParameters.value?.isolationSchema
+        Exercise.Companion.ExerciseCategory.Isolation.ordinal -> appState.value?.trainingParameters?.isolationSchema
             ?: ExerciseProgressionSchema.isolationSchema
-        Exercise.Companion.ExerciseCategory.SecondaryCompound.ordinal -> _trainingParameters.value?.secondaryCompoundSchema
+        Exercise.Companion.ExerciseCategory.SecondaryCompound.ordinal -> appState.value?.trainingParameters?.secondaryCompoundSchema
             ?: ExerciseProgressionSchema.secondaryCompoundSchema
-        else -> _trainingParameters.value?.primaryCompoundSchema
+        else -> appState.value?.trainingParameters?.primaryCompoundSchema
             ?: ExerciseProgressionSchema.primaryCompoundSchema
     }
 
@@ -202,44 +188,45 @@ class TrainingProgramViewModel @Inject constructor(
         }
     }
 
-    fun generateInitialParameters() {
-        viewModelScope.launch(Dispatchers.IO) {
-            _trainingParameters.update {
-                val uid = System.currentTimeMillis()
-                TrainingParameters(
-                    uid = uid ,
-                    userUid = _profile?.uid ?: guestProfile.uid ,
-                    programUid = -1 ,
-                    primaryCompoundSchema = ExerciseProgressionSchema.primaryCompoundSchema ,
-                    secondaryCompoundSchema = ExerciseProgressionSchema.secondaryCompoundSchema ,
-                    isolationSchema = ExerciseProgressionSchema.isolationSchema
-                )
 
-            }
-            workoutRepository.createInitialParameters(_profile?.uid ?: guestProfile.uid).onFailure {
-
-            }.onSuccess {
-
-            }
-        }
-    }
 
     fun updateSchema(appliedTo : Int , schema : ExerciseProgressionSchema) {
-        viewModelScope.launch {
-            _trainingParameters.update {
-                when (appliedTo) {
-                    0 -> it?.copy(primaryCompoundSchema = schema.apply { this.uid = schema.uid })
-                    1 -> it?.copy(secondaryCompoundSchema = schema.apply { this.uid = schema.uid })
-                    else -> it?.copy(isolationSchema = schema.apply { this.uid = schema.uid })
-                }
-
+        _appState.value?.let {
+            val newParameters : TrainingParameters = when (appliedTo) {
+                Exercise.Companion.ExerciseCategory.PrimaryCompound.ordinal -> it.trainingParameters.copy(
+                    primaryCompoundSchema = schema
+                )
+                Exercise.Companion.ExerciseCategory.SecondaryCompound.ordinal -> it.trainingParameters.copy(
+                    secondaryCompoundSchema = schema
+                )
+                else -> it.trainingParameters.copy(isolationSchema = schema)
             }
-            workoutRepository.updateSchema(schema , _trainingParameters.value?.uid ?: 0).onFailure {
-
-            }.onSuccess {
-
+            _appState.update { it!!.copy(trainingParameters = newParameters) }
+            viewModelScope.launch(Dispatchers.IO) {
+                workoutRepository.updateSchema(
+                    schema ,
+                    newParameters.uid
+                )
             }
         }
     }
 
+    fun showTooManyWorkouts() {
+        viewModelScope.launch {
+            _snackbarChannel.send(
+                SnackbarEvent(
+                    "You have too many workouts created . The maximum is 7!" ,
+                    type = SnackbarEvent.SnackbarType.Error
+                )
+            )
+        }
+    }
+
+    class SnackbarEvent(val string:String , val type:SnackbarType){
+        enum class SnackbarType{
+            Neutral,
+            Positive,
+            Error;
+        }
+    }
 }

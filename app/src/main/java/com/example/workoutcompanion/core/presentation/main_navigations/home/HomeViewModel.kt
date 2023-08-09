@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -24,23 +23,11 @@ class HomeViewModel @Inject constructor(@ComponentType(false) private val reposi
     //TODO handle the logic to see if the user has a account but no profile in db
 
 
-    private val _profile = MutableStateFlow<UserProfile?>(null)
-    val profile = _profile.asStateFlow()
-    private var appState: WorkoutCompanionAppState? = null
-    fun retrieveAppState(userUid:String){
-        viewModelScope.launch(Dispatchers.IO){
-            appStateManager.getAppState(userUid).collectLatest{ newState->
-                if(newState == null ){
-                    Log.d("Test" , "Home ViewModel::Current App State is null")
-                }
-                appState = newState
-                newState?.let {
-                    _profile.update {  newState.userProfile}
-                    Log.d("Test" , "Home ViewModel::Current App State has been updated")
-                    Log.d("Test" , "Received user = ${it.userProfile.uid}" )
-                }
-            }
-        }
+
+    private val _appState = MutableStateFlow<WorkoutCompanionAppState?>(null)
+    val appState = _appState.asStateFlow()
+    fun setAppState(initial:WorkoutCompanionAppState?){
+        _appState.update {initial}
     }
 
 

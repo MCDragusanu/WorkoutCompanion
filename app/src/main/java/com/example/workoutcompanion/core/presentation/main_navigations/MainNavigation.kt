@@ -29,6 +29,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.workoutcompanion.core.data.user_database.common.guestProfile
+import com.example.workoutcompanion.core.presentation.app_state.WorkoutCompanionAppState
 import com.example.workoutcompanion.core.presentation.main_navigations.database.DatabaseScreen
 import com.example.workoutcompanion.core.presentation.main_navigations.home.HomeScreen
 import com.example.workoutcompanion.core.presentation.main_navigations.profile.ProfileScreen
@@ -50,7 +51,7 @@ object MainNavigation {
 
     @Composable
     fun MainNavigation(
-        userUid : String ,
+        appState : WorkoutCompanionAppState?,
         startOnBoardFlow : () -> Unit
     ) {
 
@@ -59,14 +60,15 @@ object MainNavigation {
         val scope = rememberCoroutineScope()
 
 
+
         val profileViewModel = hiltViewModel<ProfileViewModel>().apply {
-            this.retrieveAppState(userUid)
+            this.setAppState(appState)
         }
         val trainingProgramViewModel = hiltViewModel<TrainingProgramViewModel>().apply {
-            this.retrieveAppState(userUid)
+            this.setAppState(appState)
         }
         val homeViewModel = hiltViewModel<HomeViewModel>().apply {
-            this.retrieveAppState(userUid)
+            this.setAppState(appState)
         }
 
         Scaffold(bottomBar = {
@@ -237,7 +239,7 @@ object MainNavigation {
         Home("Home" , HomeScreen.route , Icons.Filled.Home) ,
         Database("Database" , DatabaseScreen.route , Icons.Filled.Archive) ,
         Profile("Profile" , ProfileScreen.route , Icons.Filled.ManageAccounts) ,
-        Workouts("Workouts" , TrainingProgramDashboard.route , Icons.Filled.WorkHistory)
+        Workouts("Training" , TrainingProgramDashboard.route , Icons.Filled.WorkHistory)
     }
 
     open class Screens(val route : String)
