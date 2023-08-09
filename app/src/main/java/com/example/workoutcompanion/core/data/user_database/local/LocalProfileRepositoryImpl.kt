@@ -7,7 +7,7 @@ import javax.inject.Inject
 
 class LocalProfileRepositoryImpl @Inject constructor (private val dao : UserDao) :
     LocalProfileRepository {
-    override suspend fun getProfileByUid(uid : String , scope : CoroutineScope) : Result<UserProfile?> {
+    override suspend fun getProfileByUid(uid : String ,/* scope : CoroutineScope*/) : Result<UserProfile?> {
        return try {
            val profile = dao.getProfileByUid(uid)
            Result.success(profile)

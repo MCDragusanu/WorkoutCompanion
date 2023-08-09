@@ -3,7 +3,8 @@ package com.example.workoutcompanion.core.presentation.main_navigations.workout_
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.workoutcompanion.core.data.di.Testing
+import com.example.workoutcompanion.core.data.di.ComponentType
+
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
 import com.example.workoutcompanion.core.data.user_database.common.UserProfile
 import com.example.workoutcompanion.core.data.workout.WorkoutRepository
@@ -19,7 +20,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
-class WorkoutSessionViewModel @Inject constructor(private val workoutRepository : WorkoutRepository ,@Testing private val profileRepository : ProfileRepository):ViewModel() {
+class WorkoutSessionViewModel @Inject constructor(private val workoutRepository : WorkoutRepository ,@ComponentType(false) private val profileRepository : ProfileRepository):ViewModel() {
 
     private var _sessionUid : Long? = null
 
@@ -33,7 +34,7 @@ class WorkoutSessionViewModel @Inject constructor(private val workoutRepository 
     fun retriveProfile(uid:String) {
         _userUid = uid
         viewModelScope.launch(Dispatchers.IO) {
-            profileRepository.getProfileFromLocalSource(uid , this).onSuccess {
+            profileRepository.getProfileFromLocalSource(uid).onSuccess {
 
               _profile = it
             }.onFailure {

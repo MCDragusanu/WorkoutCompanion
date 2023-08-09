@@ -12,5 +12,5 @@ interface ProfileRepository: ProfileDataSource {
 
     suspend fun addProfile(userUid:String , newProfile : UserProfile):Result<Nothing?>
 
-    suspend fun getProfileFromLocalSource(userUid : String , externalScope:CoroutineScope):Result<UserProfile?>
+    suspend fun getProfileFromLocalSource(userUid : String , /*externalScope:CoroutineScope*/):Result<UserProfile?>
 }

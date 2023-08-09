@@ -1,19 +1,15 @@
 package com.example.workoutcompanion.core.data.exercise_database.di
 
 import android.app.Application
-import android.util.Log
+import com.example.workoutcompanion.core.data.di.ComponentType
 import com.example.workoutcompanion.core.data.exercise_database.cloud.CloudDataSource
 import com.example.workoutcompanion.core.data.exercise_database.cloud.TestCloudDataSource
 import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseDataSource
 import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseRepositoryImpl
 import com.example.workoutcompanion.core.data.exercise_database.local.LocalExerciseDatabase
 import com.example.workoutcompanion.core.data.exercise_database.local.LocalExerciseRepositoryImpl
-import com.example.workoutcompanion.core.data.exercise_database.local.TestExerciseDatabase
-import com.example.workoutcompanion.core.data.di.Production
-import com.example.workoutcompanion.core.data.di.Testing
 import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseRepository
 import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseRepositoryTestImpl
-import com.example.workoutcompanion.core.data.user_database.local.LocalProfileRepositoryTestImpl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -32,12 +28,12 @@ object ExerciseDatabaseModule {
 
     @Provides
     @Singleton
-    @Production
+    @ComponentType(testing = false)
     fun provideCloudDataSource() : ExerciseDataSource = CloudDataSource()
 
     @Provides
     @Singleton
-    @Testing
+    @ComponentType(testing = true)
     fun provideTestCloudDataSource() : ExerciseDataSource = TestCloudDataSource()
 
 
@@ -45,7 +41,7 @@ object ExerciseDatabaseModule {
 
     @Singleton
     @Provides
-    @Production
+    @ComponentType(testing = false)
     fun provideExerciseRepository(application : Application) : ExerciseRepository {
         provideExerciseDatabase(application).apply {
 
@@ -61,7 +57,7 @@ object ExerciseDatabaseModule {
 
     @Provides
     @Singleton
-    @Testing
+    @ComponentType(testing = true)
     fun provideTestExerciseRepository(application : Application) : ExerciseRepository {
         provideExerciseDatabase(application).apply {
             return ExerciseRepositoryTestImpl(

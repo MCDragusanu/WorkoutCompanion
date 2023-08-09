@@ -1,14 +1,13 @@
 package com.example.workoutcompanion.core.data.user_database.local
 
-import android.annotation.SuppressLint
 import android.util.Log
+import com.example.workoutcompanion.core.data.di.ComponentType
 import com.example.workoutcompanion.core.data.user_database.common.UserProfile
-import com.example.workoutcompanion.core.data.di.Testing
 import com.example.workoutcompanion.core.data.user_database.common.guestProfile
-import kotlinx.coroutines.CoroutineScope
 import javax.inject.Inject
 
-class LocalProfileRepositoryTestImpl @Inject constructor(@Testing private val dao : UserDao):LocalProfileRepository {
+
+class LocalProfileRepositoryTestImpl @Inject constructor(@ComponentType(true) private val dao : UserDao):LocalProfileRepository {
     override suspend fun updateProfile(
         userUid : String ,
         newProfile : UserProfile
@@ -48,7 +47,7 @@ class LocalProfileRepositoryTestImpl @Inject constructor(@Testing private val da
 
     override suspend fun getProfileByUid(
         uid : String ,
-        scope : CoroutineScope
+       // scope : CoroutineScope
     ) : Result<UserProfile> {
         return try {
             val user = guestProfile //dao.getProfileByUid(uid)

@@ -29,7 +29,7 @@ interface WorkoutRepository {
    suspend fun updateMetadata(value : WorkoutMetadata):Result<Nothing?>
    suspend  fun removeSet(set : SetSlot):Result<Nothing?>
    suspend fun getTrainingParameters(userUid : String):Result<TrainingParameters?>
-  suspend fun createInitialParameters(uid : String):Result<Nothing?>
+  suspend fun createInitialParameters(uid : String):Result<TrainingParameters>
   suspend fun updateSchema(schema : ExerciseProgressionSchema ,   parametersMetadata : Long):Result<Nothing?>
    suspend fun getLatestWeek(uid : Long) :Result<Week?>
    suspend fun addSession(session : WorkoutSession):Result<Nothing?>

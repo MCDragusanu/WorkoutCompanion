@@ -30,10 +30,10 @@ class ProfileRepositoryImpl @Inject constructor(private val cloudRepository : Cl
 
     override suspend fun getProfileFromLocalSource(
         userUid : String ,
-        externalScope : CoroutineScope
+
     ) : Result<UserProfile?> {
         return try {
-            localRepository.getProfileByUid(userUid , externalScope)
+            localRepository.getProfileByUid(userUid )
         }catch (e:Exception){
             e.printStackTrace()
             Result.failure(e)

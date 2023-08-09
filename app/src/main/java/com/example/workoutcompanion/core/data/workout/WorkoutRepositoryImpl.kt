@@ -283,8 +283,8 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
         }
     }
 
-    override suspend fun createInitialParameters(uid : String):Result<Nothing?> {
-       return try {
+    override suspend fun createInitialParameters(uid : String):Result<TrainingParameters> {
+        return try {
             val metadataUid = System.currentTimeMillis()
             val metadatada = TrainingParametersMetadata(
                 uid = metadataUid ,
@@ -322,16 +322,25 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
 
             progressionSchemaDao.addSchema(schema , schema2 , schema3)
             trainingParametersDao.addParameters(metadatada)
-           Result.success(null)
+            Result.success(
+                TrainingParameters(
+                    uid = metadataUid ,
+                    userUid = uid ,
+                    programUid = -1 ,
+                    ExerciseProgressionSchema.primaryCompoundSchema ,
+                    ExerciseProgressionSchema.secondaryCompoundSchema ,
+                    ExerciseProgressionSchema.isolationSchema
+                )
+            )
 
         } catch (e : Exception) {
             e.printStackTrace()
-           Result.failure(
-               WorkoutRepositoryException(
-                   requestName = "Create Default Training Parameters" ,
-                   reason = e.localizedMessage ?: "Unknown Error"
-               )
-           )
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Create Default Training Parameters" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
         }
     }
 

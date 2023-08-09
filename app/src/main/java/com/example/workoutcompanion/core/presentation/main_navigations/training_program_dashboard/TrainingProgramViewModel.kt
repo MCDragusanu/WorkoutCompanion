@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.workoutcompanion.common.extentions.replace
-import com.example.workoutcompanion.core.data.di.Testing
+import com.example.workoutcompanion.core.data.di.ComponentType
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
 import com.example.workoutcompanion.core.data.user_database.common.UserProfile
 import com.example.workoutcompanion.core.data.user_database.common.guestProfile
@@ -15,6 +15,8 @@ import com.example.workoutcompanion.core.data.workout.week.Week
 import com.example.workoutcompanion.core.data.workout.workout.WorkoutMetadata
 import com.example.workoutcompanion.core.domain.model.exercise.Exercise
 import com.example.workoutcompanion.core.domain.model.progression_overload.ExerciseProgressionSchema
+import com.example.workoutcompanion.core.presentation.app_state.AppStateManager
+import com.example.workoutcompanion.core.presentation.app_state.WorkoutCompanionAppState
 import com.example.workoutcompanion.workout_designer.progression_overload.ProgressionOverloadManager
 import com.example.workoutcompanion.workout_designer.progression_overload.TrainingParameters
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,8 +30,10 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TrainingProgramViewModel @Inject constructor(
-    @Testing
-    private val userRepositoryImpl: ProfileRepository ,
+    @ComponentType(false)
+    private val profileRepository: ProfileRepository ,
+    @ComponentType(false)
+    private val appStateManager : AppStateManager ,
     private val workoutRepository: WorkoutRepository ,
     private val progressionManager: ProgressionOverloadManager
 ) : ViewModel() {
@@ -48,15 +52,23 @@ class TrainingProgramViewModel @Inject constructor(
     private var _userUid : String? = null
 
 
-    fun retrieveProfile(uid : String) {
-        _userUid = uid
+    private var appState: WorkoutCompanionAppState? = null
+    fun retrieveAppState(userUid:String) {
         viewModelScope.launch(Dispatchers.IO) {
-            userRepositoryImpl.getProfileFromLocalSource(uid , this).onSuccess {
-                Log.d(
-                    "Test" ,
-                    "Training Program Screen :: ${it?.uid ?: "No user profile retrieved"}"
-                )
-                _profile = it
+            appStateManager.getAppState(userUid).collect { newState ->
+                if (newState == null) {
+                    Log.d("Test" , "Training Program ViewModel ::Current App State is null")
+                }
+                appState = newState
+                newState?.let { new ->
+                    _profile = new.userProfile
+                    _trainingParameters.update { new.trainingParameters }
+                    Log.d(
+                        "Test" ,
+                        "Training Program ViewModel ::Current App State has been updated"
+                    )
+                    Log.d("Test" , "Received user = ${new.userProfile.uid}" )
+                }
                 _profile?.let { user ->
                     workoutRepository.getWorkouts(user.uid).onFailure {
                         it.printStackTrace()
@@ -73,11 +85,11 @@ class TrainingProgramViewModel @Inject constructor(
                         workoutRepository.getTrainingParameters(user.uid).getOrNull()
                     }
                 }
-            }.onFailure {
-                Log.d("Test" , it.stackTraceToString())
             }
         }
     }
+
+
 
     fun onSubmittedWorkout(exercises : List<Exercise>) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -86,7 +98,7 @@ class TrainingProgramViewModel @Inject constructor(
             // Create metadata for the new workout
             val workoutMetadata = WorkoutMetadata(
                 uid = workoutUid ,
-                ownerUid = _userUid ?: guestProfile.uid ,
+                ownerUid = appState?.userProfile?.uid?: guestProfile.uid ,
                 name = "Workout #${_workouts.value.size + 1}" ,
                 description = "" ,
                 dayOfWeek = _workouts.value.size

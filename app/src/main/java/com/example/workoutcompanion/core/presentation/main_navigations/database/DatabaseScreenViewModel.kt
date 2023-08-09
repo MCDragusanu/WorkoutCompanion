@@ -3,23 +3,28 @@ package com.example.workoutcompanion.core.presentation.main_navigations.database
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.workoutcompanion.core.data.di.Production
-import com.example.workoutcompanion.core.data.di.Testing
+import com.example.workoutcompanion.core.data.di.ComponentType
 import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseDocument
 import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseRepository
 import com.example.workoutcompanion.core.domain.model.exercise.Exercise
+import com.example.workoutcompanion.core.presentation.app_state.AppStateManager
+import com.example.workoutcompanion.core.presentation.app_state.WorkoutCompanionAppState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class DatabaseScreenViewModel @Inject constructor (
-    @Testing
-    private val repo:ExerciseRepository):ViewModel() {
+    @ComponentType(false)
+    private val repo:ExerciseRepository,
+    @ComponentType(false)
+    private val appStateManager : AppStateManager
+    ):ViewModel() {
 
 
 
@@ -34,6 +39,8 @@ class DatabaseScreenViewModel @Inject constructor (
 
     private val _isLoading = MutableStateFlow(true)
     val isLoading = _isLoading.asStateFlow()
+
+
 
 /*  private var _userUid:String? = null
 /  fun setUid(uid:String){
@@ -54,8 +61,22 @@ class DatabaseScreenViewModel @Inject constructor (
 
           _isLoading.update { false }
           _presentedList.update { mapped }
+
       }
   }
+
+    private var appState:WorkoutCompanionAppState? = null
+    fun retrieveAppState(userUid:String){
+        viewModelScope.launch(Dispatchers.IO){
+            appStateManager.getAppState(userUid).collect{
+                if(it == null ){
+                    Log.d("Test" , "Database ViewModel ::Current App State is null")
+                }
+                appState = it
+                Log.d("Test" , "Received user = ${it?.userProfile}" )
+            }
+        }
+    }
 
   private fun mapExercisesToMusleGroup(list : List<Exercise>) : Map<String , List<Exercise>> {
       return list.associate { exercise ->

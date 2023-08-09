@@ -15,8 +15,8 @@ class RetrieveTrainingParameters {
         parametersDao : TrainingParametersDao ,
         progressionSchemaDao : ProgressionSchemaDao
     ) : Result<TrainingParameters?> {
-       return try {
-           Log.d("Test" , userUid)
+        return try {
+            Log.d("Test" , userUid)
             val trainingParametersMetadata = parametersDao.getParametersForUser(userUid)
                 ?: throw NullPointerException("Metadata not found")
             val schemas = progressionSchemaDao.getSchemas(trainingParametersMetadata.uid).map {
@@ -27,12 +27,13 @@ class RetrieveTrainingParameters {
                     weightIncrementCoeff = it.weightIncrementPercent ,
                     smallestWeightIncrementAvailable = it.smallestWeightIncrementAvailable ,
                     repIncreaseRate = it.repIncreaseRate
-                ).apply { this.uid = it.uid
-                Log.d("Test" , "Schema uid retrieved = ${it.uid}")
+                ).apply {
+                    this.uid = it.uid
+                    Log.d("Test" , "Schema uid retrieved = ${it.uid}")
                 }
             }
             schemas.onEach {
-                Log.d("Test" , it.repRange.toString() + "/"+ it.appliedTo)
+                Log.d("Test" , it.repRange.toString() + "/" + it.appliedTo)
             }
             val trainingParameters = TrainingParameters(
                 uid = trainingParametersMetadata.uid ,
@@ -49,5 +50,16 @@ class RetrieveTrainingParameters {
             e.printStackTrace()
             Result.failure(e)
         }
+    }
+
+    fun getDefaultParameters(userUid : String) : TrainingParameters {
+        return TrainingParameters(
+            uid = System.currentTimeMillis() ,
+            userUid = userUid ,
+            programUid = -1 ,
+            primaryCompoundSchema = ExerciseProgressionSchema.primaryCompoundSchema ,
+            secondaryCompoundSchema = ExerciseProgressionSchema.secondaryCompoundSchema ,
+            ExerciseProgressionSchema.isolationSchema
+        )
     }
 }

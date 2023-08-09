@@ -5,7 +5,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.workoutcompanion.common.extentions.replace
-import com.example.workoutcompanion.core.data.di.Testing
+import com.example.workoutcompanion.core.data.di.ComponentType
 import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseRepository
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
 import com.example.workoutcompanion.core.data.user_database.common.UserProfile
@@ -20,6 +20,8 @@ import com.example.workoutcompanion.core.domain.model.exercise.Exercise
 import com.example.workoutcompanion.core.domain.use_cases.GenerateSets
 import com.example.workoutcompanion.core.domain.model.progression_overload.ExerciseProgressionSchema
 import com.example.workoutcompanion.core.domain.use_cases.GenerateWorkoutSession
+import com.example.workoutcompanion.core.presentation.app_state.AppStateManager
+import com.example.workoutcompanion.core.presentation.app_state.WorkoutCompanionAppState
 import com.example.workoutcompanion.workout_designer.progression_overload.ProgressionOverloadManager
 import com.example.workoutcompanion.workout_designer.progression_overload.TrainingParameters
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,12 +32,14 @@ import javax.inject.Inject
 
 
 @HiltViewModel
-class WorkoutScreenViewModel @Inject constructor(private val progressionManager:ProgressionOverloadManager ,
+class WorkoutEditorViewModel @Inject constructor(private val progressionManager:ProgressionOverloadManager ,
                                                  private val workoutRepository : WorkoutRepository ,
-                                                 @Testing
-                                                 private val userRepository  : ProfileRepository,
-                                                 @Testing
-                                                 private val exerciseRepository : ExerciseRepository,
+                                                 @ComponentType(false)
+                                                 private val appStateManager : AppStateManager ,
+                                                 @ComponentType(false)
+                                                 private val userRepository  : ProfileRepository ,
+                                                 @ComponentType(false)
+                                                 private val exerciseRepository : ExerciseRepository ,
                                                  ):ViewModel() {
 
     private val _bottomSheetIsLoading = MutableStateFlow(true)
@@ -82,29 +86,29 @@ class WorkoutScreenViewModel @Inject constructor(private val progressionManager:
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
-    private var _userUid : String? = null
-    fun retrieveProfile(uid : String) {
-        _userUid = uid
-        try{
-            viewModelScope.launch(Dispatchers.IO) {
-                userRepository.getProfileFromLocalSource(uid , this).onSuccess {
-                    _profile = it
-                    if (_profile == null) {
-                        Log.d("Test" , "No profile retrieved")
-                    }
-                    _profile?.let {
-                        Log.d("Test" , "Profile retrieved = ${it.firstName}")
-                        _trainingParameters =
-                            workoutRepository.getTrainingParameters(it.uid).getOrNull()
-                    }
-                }.onFailure {
-                    Log.d("Test" , it.stackTraceToString())
+
+
+    private var appState: WorkoutCompanionAppState? = null
+    fun retrieveAppState(userUid:String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            appStateManager.getAppState(userUid).collect { newState ->
+                if (newState == null) {
+                    Log.d("Test" , "DatabaseScreen::Current App State is null")
+                }
+                appState = newState
+
+                newState?.let {
+                    _profile = it.userProfile
+                    _trainingParameters = it.trainingParameters
+                    Log.d("Test" , "Workout Editor ViewModel :: Current App State has been updated")
+                    Log.d("Test" , "Received user = ${it.userProfile.uid}" )
                 }
             }
-        }catch (e:Exception){
-            
         }
     }
+
+
+
     
     private fun onError(e:Exception){
         viewModelScope.launch { 

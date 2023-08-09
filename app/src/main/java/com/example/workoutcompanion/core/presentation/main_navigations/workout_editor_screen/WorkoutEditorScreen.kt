@@ -46,11 +46,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
+object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    operator fun invoke(viewModel : WorkoutScreenViewModel,onNavigateToSessionScreen:(Long)->Unit , onBackIsPressed : () -> Unit , onMetadataChanged:(WorkoutMetadata)->Unit) {
+    operator fun invoke(viewModel : WorkoutEditorViewModel , onNavigateToSessionScreen:(Long)->Unit , onBackIsPressed : () -> Unit , onMetadataChanged:(WorkoutMetadata)->Unit) {
 
         val metadata by viewModel.metadata.onEach { onMetadataChanged(it) }.collectAsState(
             WorkoutMetadata(0 , guestProfile.uid , "Default Workout" , "" , 1 , dayOfWeek = 0)
@@ -99,10 +99,10 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
                 verticalArrangement = Arrangement.spacedBy(48.dp , Alignment.Top) ,
                 horizontalAlignment = Alignment.Start
             ) {
-                item {
+                item(0) {
                     Spacer(modifier = Modifier.size(1.dp))
                 }
-                item {
+                item(1) {
                     WorkoutSummary(modifier = Modifier
                         .fillMaxWidth()
                         .height(320.dp) ,
@@ -121,7 +121,7 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
                             viewModel.onStartWorkout(onNavigateToSessionScreen)
                         })
                 }
-                item {
+                item(2) {
                     ExerciseList(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -181,7 +181,8 @@ object WorkoutScreen:MainNavigation.Screens("WorkoutScreen") {
         LaunchedEffect(key1 = currentError) {
             Log.d("Test" , "Error changed")
             if (currentError.isNotBlank()) {
-                snackBarHostState.showSnackbar(currentError)
+              val result =  snackBarHostState.showSnackbar(currentError)
+
             }
         }
     }

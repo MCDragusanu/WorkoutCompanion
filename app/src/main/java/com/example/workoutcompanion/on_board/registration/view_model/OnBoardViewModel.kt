@@ -14,8 +14,8 @@ import com.example.workoutcompanion.common.use_cases.password.ValidatePassword
 
 import com.example.workoutcompanion.core.data.user_database.common.UserProfile
 import com.example.workoutcompanion.core.data.auth_service.AuthManager
-import com.example.workoutcompanion.core.data.di.Production
-import com.example.workoutcompanion.core.data.di.Testing
+import com.example.workoutcompanion.core.data.di.ComponentType
+
 import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseRepository
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,13 +26,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class OnBoardViewModel @Inject constructor(
-    @Production
+    @ComponentType(false)
     private val repository : ExerciseRepository ,
 
-    @Production
+    @ComponentType(false)
     private val authManager : AuthManager ,
 
-    @Production
+    @ComponentType(false)
     private val userRepo : ProfileRepository ,
 
 

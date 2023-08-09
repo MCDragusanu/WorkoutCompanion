@@ -14,7 +14,6 @@ class GenerateWorkoutSession {
     ) : Result<WorkoutSession> {
         return try {
             val slots = workoutRepository.getSlotsForWorkout(workoutMetadata.uid).onFailure { throw it }.getOrNull()
-            val latestWeeks = mutableListOf<Week>()
             var string = ""
             slots?.onEach {
                 workoutRepository.getLatestWeek(it.uid).onSuccess { latestWeek ->

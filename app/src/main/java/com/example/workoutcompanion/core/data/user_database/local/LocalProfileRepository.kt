@@ -5,7 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 
 interface LocalProfileRepository {
     suspend fun getProfileByUid(uid : String ,
-                                scope : CoroutineScope
+                               /* scope : CoroutineScope*/
     ) : Result<UserProfile?>
 
     suspend fun updateProfile(

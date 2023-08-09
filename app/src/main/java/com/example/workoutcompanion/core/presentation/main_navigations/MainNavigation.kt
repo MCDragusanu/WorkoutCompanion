@@ -37,8 +37,8 @@ import com.example.workoutcompanion.core.presentation.main_navigations.home.Home
 import com.example.workoutcompanion.core.presentation.main_navigations.profile.ProfileViewModel
 import com.example.workoutcompanion.core.presentation.main_navigations.training_program_dashboard.TrainingProgramDashboard
 import com.example.workoutcompanion.core.presentation.main_navigations.training_program_dashboard.TrainingProgramViewModel
-import com.example.workoutcompanion.core.presentation.main_navigations.workout_editor_screen.WorkoutScreen
-import com.example.workoutcompanion.core.presentation.main_navigations.workout_editor_screen.WorkoutScreenViewModel
+import com.example.workoutcompanion.core.presentation.main_navigations.workout_editor_screen.WorkoutEditorScreen
+import com.example.workoutcompanion.core.presentation.main_navigations.workout_editor_screen.WorkoutEditorViewModel
 import com.example.workoutcompanion.core.presentation.main_navigations.workout_session.WorkoutSessionScreen
 import com.example.workoutcompanion.core.presentation.main_navigations.workout_session.WorkoutSessionViewModel
 import com.example.workoutcompanion.ui.Typography
@@ -49,28 +49,39 @@ import kotlinx.coroutines.launch
 object MainNavigation {
 
     @Composable
-    fun MainNavigation(homeViewModel : HomeViewModel ,
-                       trainingProgramViewModel : TrainingProgramViewModel ,
-                       profileViewModel: ProfileViewModel ,
-                       startOnBoardFlow:()->Unit
-                       ) {
+    fun MainNavigation(
+        userUid : String ,
+        startOnBoardFlow : () -> Unit
+    ) {
 
         val navController = rememberNavController()
         val navBarIsVisible = MutableStateFlow(true)
         val scope = rememberCoroutineScope()
+
+
+        val profileViewModel = hiltViewModel<ProfileViewModel>().apply {
+            this.retrieveAppState(userUid)
+        }
+        val trainingProgramViewModel = hiltViewModel<TrainingProgramViewModel>().apply {
+            this.retrieveAppState(userUid)
+        }
+        val homeViewModel = hiltViewModel<HomeViewModel>().apply {
+            this.retrieveAppState(userUid)
+        }
+
         Scaffold(bottomBar = {
             BottomNavigation(navController = navController , navBarIsVisible.asStateFlow())
         }) {
             NavGraph(
                 navController = navController ,
-                startOnBoardFlow = startOnBoardFlow,
+                startOnBoardFlow = startOnBoardFlow ,
                 displayNavBar = {
                     scope.launch { navBarIsVisible.emit(true) }
                 } ,
                 hideNavBar = {
                     scope.launch { navBarIsVisible.emit(false) }
                 } ,
-                profileViewModel = profileViewModel,
+                profileViewModel = profileViewModel ,
                 trainingProgramViewModel = trainingProgramViewModel ,
                 homeViewModel = homeViewModel ,
                 databaseScreenViewModel = hiltViewModel())
@@ -103,8 +114,8 @@ object MainNavigation {
                     val contentColor by
                     animateColorAsState(targetValue = if (item.route == currentRoute) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSecondaryContainer)
                     NavigationBarItem(
-                        selected = item.route == currentRoute,
-                        enabled = isVisible,
+                        selected = item.route == currentRoute ,
+                        enabled = isVisible ,
                         colors = NavigationBarItemColors(
                             selectedIconColor = contentColor ,
                             selectedTextColor = contentColor ,
@@ -133,7 +144,7 @@ object MainNavigation {
     @Composable
     fun NavGraph(
         databaseScreenViewModel : DatabaseScreenViewModel ,
-        trainingProgramViewModel: TrainingProgramViewModel ,
+        trainingProgramViewModel : TrainingProgramViewModel ,
         homeViewModel : HomeViewModel ,
         profileViewModel : ProfileViewModel ,
         startOnBoardFlow : () -> Unit ,
@@ -161,7 +172,6 @@ object MainNavigation {
                 } ,
                     onSubmitWorkout = {
                         trainingProgramViewModel.onSubmittedWorkout(it)
-                        //TODO think if you make the user navigate now to the workout screen
                         navController.navigate(TrainingProgramDashboard.route)
                     })
             }
@@ -174,46 +184,47 @@ object MainNavigation {
                     } ,
                     onHideNavBar = hideNavBar ,
                     onShowNavBar = displayNavBar ,
-                    navigateToWorkoutScreen = {workoutUid , userUid->
+                    navigateToWorkoutScreen = { workoutUid , userUid ->
                         //hideNavBar()
-                        navController.navigate(WorkoutScreen.route + "/${workoutUid}/${userUid}")
+                        navController.navigate(WorkoutEditorScreen.route + "/${workoutUid}/${userUid}")
                     })
             }
             composable(
-                WorkoutScreen.route + "/{workoutUid}/{userUid}" ,
+                WorkoutEditorScreen.route + "/{workoutUid}/{userUid}" ,
                 arguments = listOf(navArgument("workoutUid") {
                     type = NavType.LongType
-                } , navArgument("userUid"){
+                } , navArgument("userUid") {
                     type = NavType.StringType
                 })
             ) {
                 hideNavBar()
                 val workoutUid = it.arguments?.getLong("workoutUid") ?: -1
-                val userUid = it.arguments?.getString("userUid")?: guestProfile.uid
-                val viewModel =
-                    hiltViewModel<WorkoutScreenViewModel>().apply {
-                        this.retrieveProfile(userUid)
-                        this.retrieveWorkout(workoutUid)
-                    }
-                WorkoutScreen(viewModel = viewModel , onBackIsPressed = {
+                val userUid = it.arguments?.getString("userUid") ?: guestProfile.uid
+
+                val workoutEditorViewModel = hiltViewModel<WorkoutEditorViewModel>().apply {
+                    this.retrieveAppState(userUid)
+                    this.retrieveWorkout(workoutUid)
+                }
+                WorkoutEditorScreen(viewModel = workoutEditorViewModel , onBackIsPressed = {
                     displayNavBar()
                     navController.popBackStack()
                 } , onMetadataChanged = {
                     trainingProgramViewModel.updateMetadata(it)
-                }, onNavigateToSessionScreen = {
+                } , onNavigateToSessionScreen = {
                     navController.navigate(WorkoutSessionScreen.route + "/${userUid}/${it}")
                 })
             }
             composable(WorkoutSessionScreen.route + "/{userUid}/{sessionUid}" , arguments = listOf(
                 navArgument("userUid") {
                     type = NavType.StringType
-                } , navArgument("sessionUid"){
+                } , navArgument("sessionUid") {
                     type = NavType.LongType
-                })){
+                })
+            ) {
                 val sessionUid = it.arguments?.getLong("sessionUid") ?: -1
-                val userUid = it.arguments?.getString("userUid")?: guestProfile.uid
+                val userUid = it.arguments?.getString("userUid") ?: guestProfile.uid
                 val viewModel = hiltViewModel<WorkoutSessionViewModel>().apply {
-                    this.retriveProfile(userUid)    
+                    this.retriveProfile(userUid)
                     this.retrieveSession(sessionUid)
                 }
                 WorkoutSessionScreen.invoke(viewModel = viewModel)
@@ -221,10 +232,10 @@ object MainNavigation {
         }
     }
 
-    enum class BottomNavItem(val title:String , val route:String , val icon: ImageVector) {
+    enum class BottomNavItem(val title : String , val route : String , val icon : ImageVector) {
 
         Home("Home" , HomeScreen.route , Icons.Filled.Home) ,
-        Database("Database" , DatabaseScreen.route, Icons.Filled.Archive) ,
+        Database("Database" , DatabaseScreen.route , Icons.Filled.Archive) ,
         Profile("Profile" , ProfileScreen.route , Icons.Filled.ManageAccounts) ,
         Workouts("Workouts" , TrainingProgramDashboard.route , Icons.Filled.WorkHistory)
     }
