@@ -3,6 +3,7 @@ package com.example.workoutcompanion.core.presentation.main_navigations.database
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.workoutcompanion.core.data.di.Production
 
 import com.example.workoutcompanion.core.data.di.Testing
 import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseDocument
@@ -20,9 +21,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DatabaseScreenViewModel @Inject constructor (
-    @Testing
+    @Production
     private val repo:ExerciseRepository,
-    @Testing
+    @Production
     private val appStateManager : AppStateManager
     ):ViewModel() {
 

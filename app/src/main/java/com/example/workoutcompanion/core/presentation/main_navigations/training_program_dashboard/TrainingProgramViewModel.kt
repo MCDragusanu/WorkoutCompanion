@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.workoutcompanion.common.extentions.replace
+import com.example.workoutcompanion.core.data.di.Production
 
 import com.example.workoutcompanion.core.data.di.Testing
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
@@ -36,7 +37,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TrainingProgramViewModel @Inject constructor(
-    @Testing
+    @Production
     private val profileRepository: ProfileRepository ,
 
     private val workoutRepository: WorkoutRepository ,

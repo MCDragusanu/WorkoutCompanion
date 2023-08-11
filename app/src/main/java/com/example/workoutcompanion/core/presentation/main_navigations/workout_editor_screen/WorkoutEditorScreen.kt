@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
@@ -43,22 +44,27 @@ import com.example.workoutcompanion.core.domain.model.exercise.Exercise
 import com.example.workoutcompanion.core.presentation.main_navigations.MainNavigation
 import com.example.workoutcompanion.core.presentation.main_navigations.screens.training_program_dashboard.RepsAndWeightDialogue
 import com.example.workoutcompanion.core.presentation.main_navigations.workout_editor_screen.dialogue.ChangeRestTimeDialogue
+import com.example.workoutcompanion.on_board.registration.screens.feature.ItemSlider
 import com.example.workoutcompanion.ui.Typography
 import com.example.workoutcompanion.ui.cardShapes
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    operator fun invoke(viewModel : WorkoutEditorViewModel , onNavigateToSessionScreen:(Long)->Unit , onBackIsPressed : () -> Unit , onMetadataChanged:(WorkoutMetadata)->Unit) {
+    operator fun invoke(
+        viewModel : WorkoutEditorViewModel ,
+        onNavigateToSessionScreen : (Long) -> Unit ,
+        onBackIsPressed : () -> Unit ,
+        onMetadataChanged : (WorkoutMetadata) -> Unit
+    ) {
 
         val metadata by viewModel.metadata.onEach { onMetadataChanged(it) }.collectAsState(
             WorkoutMetadata(0 , guestProfile.uid , "Default Workout" , "" , 1 , dayOfWeek = 0)
         )
-        val  state by viewModel.appState.collectAsState()
+        val state by viewModel.appState.collectAsState()
         val isLoading by viewModel.isLoading.collectAsState()
         var showColorDialogue by remember { mutableStateOf(false) }
         var showNameDialogue by remember { mutableStateOf(false) }
@@ -163,10 +169,10 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                                     Exercise.Companion.ExerciseCategory.SecondaryCompound.ordinal -> it.trainingParameters.secondaryCompoundSchema.workingSetRestTimeInSeconds
                                     else -> it.trainingParameters.isolationSchema.workingSetRestTimeInSeconds
                                 }
-                            }?:60
+                            } ?: 60
 
                         } ,
-                        getRestTimeForWarmUpSets = {slot->
+                        getRestTimeForWarmUpSets = { slot ->
                             state?.let {
 
                                 when (slot.category) {
@@ -174,7 +180,7 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                                     Exercise.Companion.ExerciseCategory.SecondaryCompound.ordinal -> it.trainingParameters.secondaryCompoundSchema.warmUpSetRestTimeInSeconds
                                     else -> it.trainingParameters.isolationSchema.warmUpSetRestTimeInSeconds
                                 }
-                            }?:60
+                            } ?: 60
                         } ,
                         onEditRestTime = { slot , type , value ->
                             Log.d("Test" , "Type = ${type}")
@@ -214,7 +220,7 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
         LaunchedEffect(key1 = currentError) {
             Log.d("Test" , "Error changed")
             if (currentError.isNotBlank()) {
-              val result =  snackBarHostState.showSnackbar(currentError)
+                val result = snackBarHostState.showSnackbar(currentError)
 
             }
         }
@@ -227,7 +233,7 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
         modifier : Modifier ,
         bottomSheetIsLoading : StateFlow<Boolean> ,
         exerciseCollection : StateFlow<List<Exercise>> ,
-        onSearchExercise : (String) -> Unit,
+        onSearchExercise : (String) -> Unit ,
         onAddExercise : (Exercise) -> Unit
     ) {
         val isLoading by bottomSheetIsLoading.collectAsState()
@@ -265,18 +271,22 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                 } ,
             )
             exerciseList.onEach {
-            ExerciseCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight() , it,
-                onSubmitExercise = onAddExercise
-            )
-        }
+                ExerciseCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight() , it ,
+                    onSubmitExercise = onAddExercise
+                )
+            }
         }
     }
 
     @Composable
-    fun ExerciseCard(modifier : Modifier , exercise : Exercise , onSubmitExercise:(Exercise)->Unit) {
+    fun ExerciseCard(
+        modifier : Modifier ,
+        exercise : Exercise ,
+        onSubmitExercise : (Exercise) -> Unit
+    ) {
         val names = stringArrayResource(id = R.array.MuscleGroups)
         Card(
             modifier = modifier.clickable { onSubmitExercise(exercise) } ,
@@ -323,7 +333,7 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                 )
                 Text(
                     text = if (exercise.movement.type == 0) "Compound" else "Isolation" ,
-                    style = Typography.labelSmall,
+                    style = Typography.labelSmall ,
                     color = MaterialTheme.colorScheme.onBackground.copy(0.5f)
                 )
             }
@@ -537,7 +547,7 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
         slotList : StateFlow<List<ExerciseSlot>> ,
         weeksList : StateFlow<List<Week>> ,
         setList : StateFlow<List<SetSlot>> ,
-        onAddNewSet : (Int,Int , Double , Week) -> Unit ,
+        onAddNewSet : (Int , Int , Double , Week) -> Unit ,
         onSubmitStartingPoint : (ExerciseSlot , Int , Double) -> Unit ,
         onDeleteExerciseSlot : (ExerciseSlot) -> Unit ,
         onSetChanged : (SetSlot) -> Unit ,
@@ -551,79 +561,96 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
         val allWeeks by weeksList.collectAsState()
         val slots by slotList.collectAsState()
         val sets by setList.collectAsState()
-        Column(
-            modifier = modifier ,
-            verticalArrangement = Arrangement.spacedBy(4.dp , Alignment.Top) ,
-            horizontalAlignment = Alignment.Start
-        ) {
+        val listState = rememberLazyListState()
+        val currentItem = MutableStateFlow(0)
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp) , horizontalAlignment = Alignment.CenterHorizontally) {
             ExerciseListHeadline(
                 modifier = Modifier.fillMaxWidth() ,
                 onChangeOrder = { } ,
                 onAddExercise = onAddExercise)
             Spacer(modifier = Modifier.size(24.dp))
-            if (slots.isNotEmpty()) {
-                slots.onEach { slot ->
-                    val slotWeeks = allWeeks.filter { it.exerciseSlotUid == slot.uid }
-                    val currentSets = sets.filter { it.weekUid in slotWeeks.map { it.uid } }.sortedBy { it.weekUid }
-                    ExerciseCard(
+            ItemSlider(
+                modifier = Modifier.wrapContentHeight() ,
+                currentItem = currentItem,
+                numberOfItems =  slots.size ,
+                verticalAlignment =  Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            )
+            LazyRow(
+                modifier = modifier ,
+                state = listState,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (slots.isNotEmpty())
+                    items(slots , key = { it.uid }) { slot ->
+                        val slotWeeks = allWeeks.filter { it.exerciseSlotUid == slot.uid }
+                        val currentSets = sets.filter { it.weekUid in slotWeeks.map { it.uid } }
+                            .sortedBy { it.weekUid }
+                        ExerciseCard(
+                            modifier = Modifier
+                                .fillParentMaxWidth()
+                                .wrapContentHeight()
+                                .padding(16.dp) ,
+                            exercise = slot ,
+                            weeks = slotWeeks ,
+                            sets = currentSets ,
+                            onAddSet = onAddNewSet ,
+                            onSubmitStartingPoint = onSubmitStartingPoint ,
+                            onSetChanged = onSetChanged ,
+                            onDeleteExerciseSlot = onDeleteExerciseSlot ,
+                            onRemoveSet = onRemoveSet ,
+                            onGenerateWarmUpSets = onGenerateWarmUpSets ,
+                            getRestTimeForWarmUpSets = getRestTimeForWarmUpSets ,
+                            getRestTimeForWorkingUpSets = getRestTimeForWorkingSets ,
+                            onEditRestTime = onEditRestTime
+                        )
+                    }
+                else item {
+                    Card(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .fillParentMaxWidth()
                             .wrapContentHeight()
-                            .padding(16.dp) ,
-                        exercise = slot ,
-                        weeks = slotWeeks ,
-                        sets = currentSets ,
-                        onAddSet = onAddNewSet ,
-                        onSubmitStartingPoint = onSubmitStartingPoint ,
-                        onSetChanged = onSetChanged ,
-                        onDeleteExerciseSlot = onDeleteExerciseSlot ,
-                        onRemoveSet = onRemoveSet,
-                        onGenerateWarmUpSets = onGenerateWarmUpSets,
-                        getRestTimeForWarmUpSets = getRestTimeForWarmUpSets,
-                        getRestTimeForWorkingUpSets = getRestTimeForWorkingSets,
-                        onEditRestTime = onEditRestTime
-                    )
-
-                }
-            } else {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxSize(0.5f)
-                        .padding(vertical = 16.dp) ,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(12.dp) ,
-                        horizontalAlignment = Alignment.CenterHorizontally ,
-                        verticalArrangement = Arrangement.spacedBy(
-                            16.dp ,
-                            Alignment.CenterVertically
-                        )
+                            .padding(vertical = 16.dp) ,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.FormatListBulleted ,
-                            contentDescription = null ,
-                            modifier = Modifier.size(150.dp)
-                        )
-                        Text(
-                            text = "It seems you don't have any exercises added to this workout!" ,
-                            style = Typography.bodyLarge ,
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = "Start adding now" ,
-                            color = MaterialTheme.colorScheme.secondary ,
-                            style = Typography.labelMedium ,
-                            modifier = Modifier.clickable { onAddExercise() }
-                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(12.dp) ,
+                            horizontalAlignment = Alignment.CenterHorizontally ,
+                            verticalArrangement = Arrangement.spacedBy(
+                                16.dp ,
+                                Alignment.CenterVertically
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.FormatListBulleted ,
+                                contentDescription = null ,
+                                modifier = Modifier.size(150.dp)
+                            )
+                            Text(
+                                text = "It seems you don't have any exercises added to this workout!" ,
+                                style = Typography.bodyLarge ,
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                text = "Start adding now" ,
+                                color = MaterialTheme.colorScheme.secondary ,
+                                style = Typography.labelMedium ,
+                                modifier = Modifier.clickable { onAddExercise() }
+                            )
+                        }
                     }
                 }
             }
         }
+        LaunchedEffect(key1 = listState.firstVisibleItemIndex){
+            currentItem.emit(listState.firstVisibleItemIndex)
+        }
+
     }
+
+
 
     @Composable
     fun ExerciseListHeadline(

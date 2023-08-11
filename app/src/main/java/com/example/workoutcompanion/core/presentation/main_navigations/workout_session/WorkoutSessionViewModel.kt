@@ -3,6 +3,7 @@ package com.example.workoutcompanion.core.presentation.main_navigations.workout_
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.workoutcompanion.core.data.di.Production
 import com.example.workoutcompanion.core.data.di.Testing
 
 
@@ -21,7 +22,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
-class WorkoutSessionViewModel @Inject constructor(private val workoutRepository : WorkoutRepository ,@Testing private val profileRepository : ProfileRepository):ViewModel() {
+class WorkoutSessionViewModel @Inject constructor(private val workoutRepository : WorkoutRepository ,@Production private val profileRepository : ProfileRepository):ViewModel() {
 
     private var _sessionUid : Long? = null
 

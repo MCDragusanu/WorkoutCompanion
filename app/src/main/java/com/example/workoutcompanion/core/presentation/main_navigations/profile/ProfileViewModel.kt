@@ -3,6 +3,7 @@ package com.example.workoutcompanion.core.presentation.main_navigations.profile
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.workoutcompanion.core.data.di.Production
 
 import com.example.workoutcompanion.core.data.di.Testing
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
@@ -18,7 +19,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ProfileViewModel @Inject constructor(@Testing() private val userRepository : ProfileRepository):ViewModel() {
+class ProfileViewModel @Inject constructor(@Production() private val userRepository : ProfileRepository):ViewModel() {
 
 
 

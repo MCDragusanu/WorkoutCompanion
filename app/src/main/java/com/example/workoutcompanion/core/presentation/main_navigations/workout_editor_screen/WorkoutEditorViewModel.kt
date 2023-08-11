@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.workoutcompanion.common.extentions.replace
+import com.example.workoutcompanion.core.data.di.Production
 
 import com.example.workoutcompanion.core.data.di.Testing
 import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseRepository
@@ -35,9 +36,9 @@ import javax.inject.Inject
 @HiltViewModel
 class WorkoutEditorViewModel @Inject constructor(private val progressionManager:ProgressionOverloadManager ,
                                                  private val workoutRepository : WorkoutRepository ,
-                                                 @Testing
+                                                 @Production
                                                  private val userRepository  : ProfileRepository ,
-                                                 @Testing
+                                                 @Production
                                                  private val exerciseRepository : ExerciseRepository ,
                                                  ):ViewModel() {
 

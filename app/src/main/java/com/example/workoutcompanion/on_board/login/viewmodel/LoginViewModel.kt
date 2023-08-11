@@ -12,6 +12,7 @@ import com.example.workoutcompanion.common.use_cases.email.EmailProperties
 import com.example.workoutcompanion.common.use_cases.email.ValidateEmail
 
 import com.example.workoutcompanion.core.data.auth_service.AuthManager
+import com.example.workoutcompanion.core.data.di.Production
 
 import com.example.workoutcompanion.core.data.di.Testing
 
@@ -24,9 +25,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    @Testing
+    @Production
     private val auth : AuthManager,
-    @Testing
+    @Production
     private val repository : ExerciseRepository,
 
 

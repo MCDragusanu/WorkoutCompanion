@@ -9,6 +9,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.compose.WorkoutCompanionTheme
+import com.example.workoutcompanion.core.data.di.Production
 
 import com.example.workoutcompanion.core.data.di.Testing
 import com.example.workoutcompanion.core.data.user_database.common.guestProfile
@@ -26,7 +27,7 @@ class MainActivity : ComponentActivity() {
 
 
     @Inject
-    @Testing
+    @Production
     lateinit var appStateManager :AppStateManager
 
     private var userUid : String = guestProfile.uid
