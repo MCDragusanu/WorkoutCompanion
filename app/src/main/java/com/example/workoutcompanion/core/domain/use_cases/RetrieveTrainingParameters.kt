@@ -29,8 +29,11 @@ class RetrieveTrainingParameters {
                     startingWeightPercent = it.startingWeightPercent,
                     warmUpSetCount = it.warmUpSetCount,
                     warmUpRepCount = it.warmUpRepCount,
+                    workingSetRestTimeInSeconds =it.workingSetRestTimeInSeconds,
+                    warmUpSetRestTimeInSeconds = it.warmUpSetRestTimeInSeconds,
+                    difficultyCoeff =it.difficultyCoeff,
 
-                ).apply {
+                    ).apply {
                     this.uid = it.uid
                     Log.d("Test" , "Schema uid retrieved = ${it.uid}")
                 }
@@ -42,6 +45,7 @@ class RetrieveTrainingParameters {
                 uid = trainingParametersMetadata.uid ,
                 userUid = userUid ,
                 programUid = -1 ,
+
                 primaryCompoundSchema = schemas.first { it.appliedTo.ordinal == Exercise.Companion.ExerciseCategory.PrimaryCompound.ordinal } ,
                 secondaryCompoundSchema = schemas.first { it.appliedTo.ordinal == Exercise.Companion.ExerciseCategory.SecondaryCompound.ordinal } ,
                 isolationSchema = schemas.first { it.appliedTo.ordinal == Exercise.Companion.ExerciseCategory.Isolation.ordinal }

@@ -42,6 +42,7 @@ import com.example.workoutcompanion.core.data.workout.workout.WorkoutMetadata
 import com.example.workoutcompanion.core.domain.model.exercise.Exercise
 import com.example.workoutcompanion.core.presentation.main_navigations.MainNavigation
 import com.example.workoutcompanion.core.presentation.main_navigations.screens.training_program_dashboard.RepsAndWeightDialogue
+import com.example.workoutcompanion.core.presentation.main_navigations.workout_editor_screen.dialogue.ChangeRestTimeDialogue
 import com.example.workoutcompanion.ui.Typography
 import com.example.workoutcompanion.ui.cardShapes
 import kotlinx.coroutines.flow.StateFlow
@@ -57,6 +58,7 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
         val metadata by viewModel.metadata.onEach { onMetadataChanged(it) }.collectAsState(
             WorkoutMetadata(0 , guestProfile.uid , "Default Workout" , "" , 1 , dayOfWeek = 0)
         )
+        val  state by viewModel.appState.collectAsState()
         val isLoading by viewModel.isLoading.collectAsState()
         var showColorDialogue by remember { mutableStateOf(false) }
         var showNameDialogue by remember { mutableStateOf(false) }
@@ -131,8 +133,8 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                         slotList = viewModel.exerciseSlots ,
                         weeksList = viewModel.weeks ,
                         setList = viewModel.sets ,
-                        onAddNewSet = { reps , weight , week ->
-                            viewModel.addNewSet(reps , weight , week)
+                        onAddNewSet = { type , reps , weight , week ->
+                            viewModel.addNewSet(type , reps , weight , week)
                         } ,
                         onSubmitStartingPoint = { slot , reps , weight ->
                             viewModel.onSubmittedStartingPoint(slot , reps , weight)
@@ -149,10 +151,36 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                         } ,
                         onRemoveSet = {
                             viewModel.removeSet(it)
-                        },
+                        } ,
                         onGenerateWarmUpSets = {
-                          //  viewModel.generateWarmUpSets(it)
+                            //  viewModel.generateWarmUpSets(it)
+                        } ,
+                        getRestTimeForWorkingSets = { slot ->
+                            state?.let {
+
+                                when (slot.category) {
+                                    Exercise.Companion.ExerciseCategory.PrimaryCompound.ordinal -> it.trainingParameters.primaryCompoundSchema.workingSetRestTimeInSeconds
+                                    Exercise.Companion.ExerciseCategory.SecondaryCompound.ordinal -> it.trainingParameters.secondaryCompoundSchema.workingSetRestTimeInSeconds
+                                    else -> it.trainingParameters.isolationSchema.workingSetRestTimeInSeconds
+                                }
+                            }?:60
+
+                        } ,
+                        getRestTimeForWarmUpSets = {slot->
+                            state?.let {
+
+                                when (slot.category) {
+                                    Exercise.Companion.ExerciseCategory.PrimaryCompound.ordinal -> it.trainingParameters.primaryCompoundSchema.warmUpSetRestTimeInSeconds
+                                    Exercise.Companion.ExerciseCategory.SecondaryCompound.ordinal -> it.trainingParameters.secondaryCompoundSchema.warmUpSetRestTimeInSeconds
+                                    else -> it.trainingParameters.isolationSchema.warmUpSetRestTimeInSeconds
+                                }
+                            }?:60
+                        } ,
+                        onEditRestTime = { slot , type , value ->
+                            Log.d("Test" , "Type = ${type}")
+                            viewModel.onEditRestTime(slot , type , value)
                         }
+
                     )
                 }
 
@@ -509,13 +537,16 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
         slotList : StateFlow<List<ExerciseSlot>> ,
         weeksList : StateFlow<List<Week>> ,
         setList : StateFlow<List<SetSlot>> ,
-        onAddNewSet : (Int , Double , Week) -> Unit ,
+        onAddNewSet : (Int,Int , Double , Week) -> Unit ,
         onSubmitStartingPoint : (ExerciseSlot , Int , Double) -> Unit ,
         onDeleteExerciseSlot : (ExerciseSlot) -> Unit ,
         onSetChanged : (SetSlot) -> Unit ,
         onAddExercise : () -> Unit ,
-        onRemoveSet : (SetSlot) -> Unit,
-        onGenerateWarmUpSets : (Week) -> Unit,
+        onRemoveSet : (SetSlot) -> Unit ,
+        onGenerateWarmUpSets : (Week) -> Unit ,
+        getRestTimeForWarmUpSets : (ExerciseSlot) -> Int ,
+        getRestTimeForWorkingSets : (ExerciseSlot) -> Int ,
+        onEditRestTime : (ExerciseSlot , Int , Int) -> Unit ,
     ) {
         val allWeeks by weeksList.collectAsState()
         val slots by slotList.collectAsState()
@@ -547,7 +578,10 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                         onSetChanged = onSetChanged ,
                         onDeleteExerciseSlot = onDeleteExerciseSlot ,
                         onRemoveSet = onRemoveSet,
-                        onGenerateWarmUpSets = onGenerateWarmUpSets
+                        onGenerateWarmUpSets = onGenerateWarmUpSets,
+                        getRestTimeForWarmUpSets = getRestTimeForWarmUpSets,
+                        getRestTimeForWorkingUpSets = getRestTimeForWorkingSets,
+                        onEditRestTime = onEditRestTime
                     )
 
                 }
@@ -646,19 +680,28 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
         exercise : ExerciseSlot ,
         weeks : List<Week> ,
         sets : List<SetSlot> ,
-        onAddSet : (Int , Double , Week) -> Unit ,
+        onAddSet : ( Int,Int , Double , Week) -> Unit ,
         onSubmitStartingPoint : (ExerciseSlot , Int , Double) -> Unit ,
         onSetChanged : (SetSlot) -> Unit ,
         onDeleteExerciseSlot : (ExerciseSlot) -> Unit ,
         onRemoveSet : (SetSlot) -> Unit,
+        getRestTimeForWarmUpSets:(ExerciseSlot)->Int,
+        getRestTimeForWorkingUpSets:(ExerciseSlot)->Int,
         onGenerateWarmUpSets : (Week) -> Unit,
+        onEditRestTime:(ExerciseSlot,Int,Int)->Unit
     ) {
 
 
+        var showRestTimeDialogue by remember { mutableStateOf(false)}
+        var restTimeType by remember { mutableStateOf(0)}
         var currentWeek by remember { mutableStateOf(weeks.lastOrNull()) }
         val lastWeek = weeks.lastOrNull()
         var showDialogue by remember { mutableStateOf(false) }
-        var currentSets = if(currentWeek == null) emptyList() else sets.filter { it.weekUid == currentWeek!!.uid }.sortedBy { it.index }
+        var showDialogueAddSets by remember { mutableStateOf(false) }
+        val currentSets =
+            if (currentWeek == null) emptyList() else sets.filter { it.weekUid == currentWeek!!.uid }
+                .sortedBy { it.index }
+        var setType by remember { mutableStateOf(SetSlot.WorkingSet) }
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -716,12 +759,8 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                             onWeekClicked = {
                                 currentWeek = it
                             } ,
-                            onAddSet = { reps , weight , week ->
-                                onAddSet(reps , weight , week)
-                            } ,
-                            isBodyWeight = exercise.isBodyWeight,
-                            onGenerateWarmUpSets = onGenerateWarmUpSets
-                        )
+
+                            )
                     }
                     AnimatedContent(targetState = currentSets) {
                         currentWeek?.let { week ->
@@ -730,50 +769,148 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                                     .wrapContentHeight()
                                     .fillMaxWidth() ,
                                 horizontalAlignment = Alignment.Start ,
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                val warmUpSets = it.filter{it.type == SetSlot.WarmUp}
-                                val workingSets = it.filter{it.type == SetSlot.WorkingSet}
-                                Row(){
-                                    Text(text = "Warm Up Sets" , style = Typography.labelMedium)
-                                }
-                                if(warmUpSets.isEmpty()){
-                                    Text(text = "No Warm Up Sets" , style = Typography.labelSmall)
-                                }else {
-                                    warmUpSets.onEach {
-                                        SetCard(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .wrapContentHeight() ,
-                                            setSlot = it ,
-                                            isEditable = currentWeek == lastWeek,
-                                            onSetChanged = onSetChanged ,
-                                            isBodyWeight = exercise.isBodyWeight ,
-                                            onRemoveSet = { toBeRemoved ->
-                                                onRemoveSet(toBeRemoved)
+                                val warmUpSets = it.filter { it.type == SetSlot.WarmUp }
+                                val workingSets = it.filter { it.type == SetSlot.WorkingSet }
+                                Column(
+                                    modifier = Modifier.wrapContentSize() ,
+                                    verticalArrangement = Arrangement.spacedBy(4.dp) ,
+                                    horizontalAlignment = Alignment.Start
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(text = "Warm Up Sets" , style = Typography.labelMedium)
+
+                                        Icon(
+                                            imageVector = Icons.Filled.Add ,
+                                            contentDescription = null ,
+                                            tint = MaterialTheme.colorScheme.secondary ,
+                                            modifier = Modifier.clickable {
+                                                showDialogueAddSets = true
+                                                setType = SetSlot.WarmUp
                                             }
+                                        )
+
+                                    }
+                                    Row(
+                                        modifier = Modifier.wrapContentSize() ,
+                                        horizontalArrangement = Arrangement.spacedBy(
+                                            8.dp ,
+                                            Alignment.Start
+                                        ) ,
+                                        verticalAlignment = Alignment.CenterVertically,
+
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Timer ,
+                                            contentDescription = null ,
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+
+                                        Text(
+                                            text = "${getRestTimeForWarmUpSets(exercise)} s" ,
+                                            color = MaterialTheme.colorScheme.primary ,
+                                            modifier = Modifier.clickable {
+                                                restTimeType = 0
+                                                showRestTimeDialogue = true
+
+                                            })
+                                        Text(
+                                                text = "Rest Time between sets" ,
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onBackground.copy(0.5f)
                                         )
                                     }
                                 }
-                                Row(){
-                                    Text(text = "Working Sets" , style = Typography.labelMedium)
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    if (warmUpSets.isEmpty()) {
+                                        Text(
+                                            text = "No Warm Up Sets" ,
+                                            style = Typography.labelSmall
+                                        )
+                                    } else {
+                                        warmUpSets.onEach {
+                                            SetCard(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .wrapContentHeight() ,
+                                                setSlot = it ,
+                                                isEditable = currentWeek == lastWeek ,
+                                                onSetChanged = onSetChanged ,
+                                                isBodyWeight = exercise.isBodyWeight ,
+                                                onRemoveSet = { toBeRemoved ->
+                                                    onRemoveSet(toBeRemoved)
+                                                }
+                                            )
+                                        }
+                                    }
                                 }
-                                if (workingSets.isEmpty()) {
-                                           Text(text = "No Working Sets")
-                                } else {
-                                    workingSets.onEach {
-                                        SetCard(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .wrapContentHeight() ,
-                                            setSlot = it ,
-                                            isEditable = currentWeek == lastWeek,
-                                            onSetChanged = onSetChanged ,
-                                            isBodyWeight = exercise.isBodyWeight ,
-                                            onRemoveSet = { toBeRemoved ->
-                                                onRemoveSet(toBeRemoved)
+                                Column(
+                                    modifier = Modifier.wrapContentSize() ,
+                                    verticalArrangement = Arrangement.spacedBy(4.dp) ,
+                                    horizontalAlignment = Alignment.Start
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(text = "Working Sets" , style = Typography.labelMedium)
+
+                                        Icon(
+                                            imageVector = Icons.Filled.Add ,
+                                            contentDescription = null ,
+                                            tint = MaterialTheme.colorScheme.secondary ,
+                                            modifier = Modifier.clickable {
+                                                setType =1
+                                                showDialogueAddSets = true
                                             }
                                         )
+
+                                    }
+                                    Row(
+                                        modifier = Modifier.wrapContentSize() ,
+                                        horizontalArrangement = Arrangement.spacedBy(
+                                            8.dp ,
+                                            Alignment.Start
+                                        ) ,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Timer ,
+                                            contentDescription = null ,
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text(
+                                            text = "${getRestTimeForWorkingUpSets(exercise)} s" ,
+                                            color = MaterialTheme.colorScheme.primary ,
+                                            modifier = Modifier.clickable {
+                                                restTimeType = SetSlot.WorkingSet
+                                                showRestTimeDialogue = true
+
+                                            })
+                                        Text(
+                                                text = "Rest Time between sets" ,
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onBackground.copy(0.5f)
+                                        )
+                                    }
+                                }
+
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    if (workingSets.isEmpty()) {
+                                        Text(text = "No Working Sets")
+                                    } else {
+                                        workingSets.onEach {
+                                            SetCard(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .wrapContentHeight() ,
+                                                setSlot = it ,
+                                                isEditable = currentWeek == lastWeek ,
+                                                onSetChanged = onSetChanged ,
+                                                isBodyWeight = exercise.isBodyWeight ,
+                                                onRemoveSet = { toBeRemoved ->
+                                                    onRemoveSet(toBeRemoved)
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -782,6 +919,30 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                 }
             }
         }
+        if(showRestTimeDialogue) {
+            ChangeRestTimeDialogue(onDismiss = { showRestTimeDialogue = false } ,
+                currentInSeconds = if (restTimeType == SetSlot.WarmUp) getRestTimeForWarmUpSets(
+                    exercise
+                ) else getRestTimeForWorkingUpSets(exercise),
+                onSubmit ={value->
+                    onEditRestTime(exercise,restTimeType , value)
+                })
+        }
+        if (showDialogueAddSets) {
+            RepsAndWeightDialogue(
+                title = R.string.add_new_set ,
+                caption = null ,
+                onDismiss = { showDialogueAddSets = false } ,
+                onSubmit = { currentReps , currentWeight ->
+                    currentWeek?.let {
+                        onAddSet(setType , currentReps , currentWeight , it)
+                    }
+                    showDialogueAddSets = false
+                } ,
+                exerciseIsBodyWeight = exercise.isBodyWeight
+            )
+        }
+
         if (showDialogue) {
             RepsAndWeightDialogue(onDismiss = { showDialogue = false } ,
                 exerciseIsBodyWeight = exercise.isBodyWeight ,
@@ -925,6 +1086,7 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                 }
             }
         }
+
     }
 
 
@@ -935,11 +1097,9 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
         weeks : List<Week> ,
         currentWeek : Week? ,
         onWeekClicked : (Week) -> Unit ,
-        onAddSet : (Int , Double , Week , ) -> Unit ,
-        isBodyWeight : Boolean ,
-        onGenerateWarmUpSets:(Week)->Unit
+
     ) {
-        var showDialogue by remember { mutableStateOf(false) }
+        val lastWeek = weeks.lastOrNull { it.index == currentWeek?.index ?: -1 }
         //TODO add a piramid warmup feature, in the exercise progression schema add some parameters that describe the grouth of the warmup
         LazyRow(
             modifier = modifier ,
@@ -968,32 +1128,29 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                     )
                 )
             }
-            if (currentWeek != null) {
-                item {
-                    AssistChip(onClick = { showDialogue = true } , label = {
-                        Text("Add Set" , fontSize = 10.sp)
-                    })
-                }
-                item{
-                    AssistChip(onClick = { onGenerateWarmUpSets(currentWeek)} , label = {
-                        Text("Create Warm Up Sets" , fontSize = 10.sp)
-                    })
-                }
-            }
-        }
-        if (showDialogue) {
-            RepsAndWeightDialogue(
-                title = R.string.add_new_set ,
-                caption = null ,
-                onDismiss = { showDialogue = false } ,
-                onSubmit = { currentReps , currentWeight ->
-                    currentWeek?.let {
-                        onAddSet(currentReps , currentWeight , it)
+
+            item {
+               // AssistChip(onClick = { } , label = {
+                   Row(
+                        modifier = Modifier.height(40.dp) ,
+                        horizontalArrangement = Arrangement.spacedBy(
+                            8.dp ,
+                            Alignment.CenterHorizontally
+                        ) ,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if(currentWeek!=null && lastWeek == currentWeek) Icons.Filled.LockOpen else Icons.Filled.Lock,
+                            contentDescription = null ,
+                            tint = Color.Yellow ,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(text =  if(currentWeek!=null && lastWeek == currentWeek)"Editable" else "Read-Only" , style = TextStyle(fontSize = 10.sp))
                     }
-                } ,
-                exerciseIsBodyWeight = isBodyWeight
-            )
+                }
+           // }
         }
+
     }
 
 

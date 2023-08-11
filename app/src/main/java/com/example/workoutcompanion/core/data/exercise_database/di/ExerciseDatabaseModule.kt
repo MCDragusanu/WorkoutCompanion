@@ -1,7 +1,9 @@
 package com.example.workoutcompanion.core.data.exercise_database.di
 
 import android.app.Application
-import com.example.workoutcompanion.core.data.di.ComponentType
+import com.example.workoutcompanion.core.data.di.Production
+import com.example.workoutcompanion.core.data.di.Testing
+
 import com.example.workoutcompanion.core.data.exercise_database.cloud.CloudDataSource
 import com.example.workoutcompanion.core.data.exercise_database.cloud.TestCloudDataSource
 import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseDataSource
@@ -28,12 +30,12 @@ object ExerciseDatabaseModule {
 
     @Provides
     @Singleton
-    @ComponentType(testing = false)
+   @Production
     fun provideCloudDataSource() : ExerciseDataSource = CloudDataSource()
 
     @Provides
     @Singleton
-    @ComponentType(testing = true)
+   @Testing
     fun provideTestCloudDataSource() : ExerciseDataSource = TestCloudDataSource()
 
 
@@ -41,10 +43,9 @@ object ExerciseDatabaseModule {
 
     @Singleton
     @Provides
-    @ComponentType(testing = false)
+   @Production
     fun provideExerciseRepository(application : Application) : ExerciseRepository {
         provideExerciseDatabase(application).apply {
-
             return ExerciseRepositoryImpl(
                 cloudDataSource = CloudDataSource() ,
                 localRepository = LocalExerciseRepositoryImpl(
@@ -57,7 +58,7 @@ object ExerciseDatabaseModule {
 
     @Provides
     @Singleton
-    @ComponentType(testing = true)
+   @Testing
     fun provideTestExerciseRepository(application : Application) : ExerciseRepository {
         provideExerciseDatabase(application).apply {
             return ExerciseRepositoryTestImpl(

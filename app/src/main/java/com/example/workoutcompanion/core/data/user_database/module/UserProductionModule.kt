@@ -2,7 +2,9 @@ package com.example.workoutcompanion.core.data.user_database.module
 
 import android.app.Application
 import com.example.workoutcompanion.core.data.auth_service.AuthModule
-import com.example.workoutcompanion.core.data.di.ComponentType
+
+import com.example.workoutcompanion.core.data.di.Production
+import com.example.workoutcompanion.core.data.di.Testing
 import com.example.workoutcompanion.core.data.user_database.cloud.CloudProfileRepositoryImpl
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepositoryImpl
@@ -21,21 +23,21 @@ import dagger.hilt.components.SingletonComponent
 object UserProductionModule {
 
     @Provides
-    @ComponentType(testing = false)
+    @Production
     fun provideUserDatabase(application : Application) : ProductionUserDatabase {
         //Log.d("Test" , "Provied production User Database")
         return ProductionUserDatabase.getInstance(application)
     }
 
     @Provides
-    @ComponentType(testing = false)
+    @Production
     fun provideCloudRepository() : CloudProfileRepository {
         //Log.d("Test" , "Provided production Cloud Profile Repository")
         return CloudProfileRepositoryImpl()
     }
 
     @Provides
-    @ComponentType(testing = false)
+    @Production
     fun provideLocalRepository(application : Application) : LocalProfileRepository {
         provideUserDatabase(application).apply {
             //Log.d("Test" , "Provided production Local Profile Repository")
@@ -44,7 +46,7 @@ object UserProductionModule {
     }
 
     @Provides
-    @ComponentType(testing = false)
+    @Production
     fun provideProfileRepository(application : Application) : ProfileRepository {
         //Log.d("Test" , "Provided production Profile Repository")
         return ProfileRepositoryImpl(

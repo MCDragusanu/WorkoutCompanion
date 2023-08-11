@@ -9,6 +9,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.compose.WorkoutCompanionTheme
+
+import com.example.workoutcompanion.core.data.di.Testing
 import com.example.workoutcompanion.core.data.user_database.common.guestProfile
 import com.example.workoutcompanion.core.presentation.app_state.AppStateManager
 import com.example.workoutcompanion.core.presentation.app_state.WorkoutCompanionAppState
@@ -24,6 +26,7 @@ class MainActivity : ComponentActivity() {
 
 
     @Inject
+    @Testing
     lateinit var appStateManager :AppStateManager
 
     private var userUid : String = guestProfile.uid
@@ -37,15 +40,13 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             WorkoutCompanionTheme {
-                var appState by remember { mutableStateOf<WorkoutCompanionAppState?>(null)}
+                var appState by remember { mutableStateOf<WorkoutCompanionAppState?>(null) }
                 rememberCoroutineScope().launch {
-                   appStateManager.getAppState(userUid).collectLatest {
-                       appState = it
-                   }
+                    appState = appStateManager.getAppState(userUid)
                 }
 
                 MainNavigation.MainNavigation(
-                   appState = appState,
+                    appState = appState ,
                     startOnBoardFlow = {
                         startEntryActivity()
                     }

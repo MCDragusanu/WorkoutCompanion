@@ -10,7 +10,6 @@ class Application:android.app.Application()
 
 
 @Qualifier
-annotation class ComponentType(val testing:Boolean){
-
-}
+annotation class Testing()
+@Qualifier annotation class Production()
 

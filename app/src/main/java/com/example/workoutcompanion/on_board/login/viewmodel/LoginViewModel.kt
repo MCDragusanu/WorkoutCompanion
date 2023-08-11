@@ -12,7 +12,8 @@ import com.example.workoutcompanion.common.use_cases.email.EmailProperties
 import com.example.workoutcompanion.common.use_cases.email.ValidateEmail
 
 import com.example.workoutcompanion.core.data.auth_service.AuthManager
-import com.example.workoutcompanion.core.data.di.ComponentType
+
+import com.example.workoutcompanion.core.data.di.Testing
 
 import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseRepository
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
@@ -23,9 +24,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    @ComponentType(false)
+    @Testing
     private val auth : AuthManager,
-    @ComponentType(false)
+    @Testing
     private val repository : ExerciseRepository,
 
 

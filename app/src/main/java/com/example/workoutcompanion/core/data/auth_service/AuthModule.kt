@@ -1,6 +1,8 @@
 package com.example.workoutcompanion.core.data.auth_service
 
-import com.example.workoutcompanion.core.data.di.ComponentType
+
+import com.example.workoutcompanion.core.data.di.Production
+import com.example.workoutcompanion.core.data.di.Testing
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -14,12 +16,12 @@ object AuthModule {
 
     @Provides
     @Singleton
-   @ComponentType(testing = false)
+  @Production
     fun provideProductionAuthService() : AuthManager = AuthManagerImpl()
 
     @Provides
     @Singleton
-    @ComponentType(testing = true)
+    @Testing
     fun provideTestAuthService(): AuthManager = AuthManagerTestImpl()
 
 }

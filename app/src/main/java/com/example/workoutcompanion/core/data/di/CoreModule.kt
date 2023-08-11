@@ -24,18 +24,18 @@ object CoreModule {
 
     @Provides
     @Singleton
-    @ComponentType(true)
+  @Testing
     fun provideTestingAppStateManager(application : android.app.Application) : AppStateManager {
         return AppStateManager(
             workoutRepository = WorkoutModule.provideWorkoutRepository(
                 application
-            ) , profileRepository = UserTestingModule.provideProfileRepository(application)
+            ) , profileRepository = UserTestingModule.provideProfileRepository()
         )
     }
 
     @Provides
     @Singleton
-    @ComponentType(false)
+    @Production
     fun provideProductionAppStateManager(application : android.app.Application) : AppStateManager {
         return AppStateManager(
             workoutRepository = WorkoutModule.provideWorkoutRepository(

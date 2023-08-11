@@ -3,7 +3,8 @@ package com.example.workoutcompanion.core.presentation.main_navigations.home
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.workoutcompanion.core.data.di.ComponentType
+
+import com.example.workoutcompanion.core.data.di.Testing
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
 import com.example.workoutcompanion.core.data.user_database.common.UserProfile
 import com.example.workoutcompanion.core.presentation.app_state.AppStateManager
@@ -18,7 +19,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(@ComponentType(false) private val repository : ProfileRepository , @ComponentType(false) private val appStateManager : AppStateManager):ViewModel(){
+class HomeViewModel @Inject constructor(@Testing private val repository : ProfileRepository ):ViewModel(){
 
     //TODO handle the logic to see if the user has a account but no profile in db
 

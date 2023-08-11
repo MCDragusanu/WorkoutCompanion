@@ -5,7 +5,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.workoutcompanion.common.extentions.replace
-import com.example.workoutcompanion.core.data.di.ComponentType
+
+import com.example.workoutcompanion.core.data.di.Testing
 import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseRepository
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
 import com.example.workoutcompanion.core.data.user_database.common.UserProfile
@@ -34,11 +35,9 @@ import javax.inject.Inject
 @HiltViewModel
 class WorkoutEditorViewModel @Inject constructor(private val progressionManager:ProgressionOverloadManager ,
                                                  private val workoutRepository : WorkoutRepository ,
-                                                 @ComponentType(false)
-                                                 private val appStateManager : AppStateManager ,
-                                                 @ComponentType(false)
+                                                 @Testing
                                                  private val userRepository  : ProfileRepository ,
-                                                 @ComponentType(false)
+                                                 @Testing
                                                  private val exerciseRepository : ExerciseRepository ,
                                                  ):ViewModel() {
 
@@ -50,10 +49,10 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
 
     private val _errorChannel = MutableSharedFlow<String>()
     val errorChannel = _errorChannel.asSharedFlow()
-    
+
     private var _workoutUid : Long = -1
 
-    private var _trainingParameters :TrainingParameters?= null
+
 
     private val _metadata = MutableStateFlow(
         WorkoutMetadata(
@@ -87,32 +86,17 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
     val isLoading = _isLoading.asStateFlow()
 
 
-
-    private var appState: WorkoutCompanionAppState? = null
-    fun retrieveAppState(userUid:String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            appStateManager.getAppState(userUid).collect { newState ->
-                if (newState == null) {
-                    Log.d("Test" , "DatabaseScreen::Current App State is null")
-                }
-                appState = newState
-
-                newState?.let {
-                    _profile = it.userProfile
-                    _trainingParameters = it.trainingParameters
-                    Log.d("Test" , "Workout Editor ViewModel :: Current App State has been updated")
-                    Log.d("Test" , "Received user = ${it.userProfile.uid}" )
-                }
-            }
-        }
+    private val _appState = MutableStateFlow<WorkoutCompanionAppState?>(null)
+    val appState = _appState.asStateFlow()
+    fun retrieveAppState(appState : WorkoutCompanionAppState?) {
+        Log.d("Test" , "Received appState = ${appState.toString()}")
+        _appState.update { appState }
     }
 
 
-
-    
-    private fun onError(e:Exception){
-        viewModelScope.launch { 
-            _errorChannel.emit(e.localizedMessage?:"Unknown error has occurred")
+    private fun onError(e : Exception) {
+        viewModelScope.launch {
+            _errorChannel.emit(e.localizedMessage ?: "Unknown error has occurred")
         }
     }
 
@@ -121,7 +105,8 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
         _workoutUid = workoutUid
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val metadata = workoutRepository.getWorkoutByUid(_workoutUid).onFailure { onError(Exception(it)) }.getOrNull()
+                val metadata = workoutRepository.getWorkoutByUid(_workoutUid)
+                    .onFailure { onError(Exception(it)) }.getOrNull()
 
 
                 if (metadata == null) {
@@ -134,11 +119,11 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
                     val weeks = mutableListOf<Week>()
 
                     slots.onEach {
-                        weeks += workoutRepository.getWeeksForSlot(it).getOrNull()?: emptyList()
+                        weeks += workoutRepository.getWeeksForSlot(it).getOrNull() ?: emptyList()
                     }
                     val setList = mutableListOf<SetSlot>()
                     weeks.onEach {
-                        val sets = workoutRepository.getSetsForWeek(it).getOrNull()?: emptyList()
+                        val sets = workoutRepository.getSetsForWeek(it).getOrNull() ?: emptyList()
                         setList += sets
                     }
 
@@ -160,7 +145,7 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
 
         viewModelScope.launch(Dispatchers.IO) {
 
-            try{
+            try {
                 val previousWeek =
                     _weeks.value.filter { it.exerciseSlotUid == slot.uid }.maxByOrNull { it.index }
 
@@ -181,17 +166,20 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
                 _exerciseSlots.update { it }
                 _sets.update { it + newSets }
                 _weeks.update { it + newWeek }
-            }catch (e:Exception){
+            } catch (e : Exception) {
                 onError(e)
             }
 
         }
     }
 
-    private inline fun getSchema(int : Int) = when (int) {
-        Exercise.Companion.ExerciseCategory.Isolation.ordinal -> _trainingParameters?.isolationSchema?: ExerciseProgressionSchema.isolationSchema
-        Exercise.Companion.ExerciseCategory.SecondaryCompound.ordinal -> _trainingParameters?.secondaryCompoundSchema?: ExerciseProgressionSchema.secondaryCompoundSchema
-        else -> _trainingParameters?.primaryCompoundSchema?: ExerciseProgressionSchema.primaryCompoundSchema
+    fun getSchema(int : Int) = when (int) {
+        Exercise.Companion.ExerciseCategory.Isolation.ordinal -> appState.value?.trainingParameters?.isolationSchema
+            ?: ExerciseProgressionSchema.isolationSchema
+        Exercise.Companion.ExerciseCategory.SecondaryCompound.ordinal -> appState.value?.trainingParameters?.secondaryCompoundSchema
+            ?: ExerciseProgressionSchema.secondaryCompoundSchema
+        else -> appState.value?.trainingParameters?.primaryCompoundSchema
+            ?: ExerciseProgressionSchema.primaryCompoundSchema
     }
 
 
@@ -202,7 +190,7 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
     ) {
         viewModelScope.launch {
 
-            try{
+            try {
                 val oneRepMax =
                     progressionManager.estimate1RepMaxInKgs(weightInKgs = weight , reps = reps)
 
@@ -231,7 +219,7 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
                 _exerciseSlots.update { it }
                 _sets.update { it + sets }
                 _weeks.update { it + startingPoint }
-            }catch (e:Exception){
+            } catch (e : Exception) {
                 onError(e)
             }
         }
@@ -239,13 +227,13 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
 
     fun onSetChanged(set : SetSlot) {
         viewModelScope.launch(Dispatchers.IO) {
-            try{
+            try {
                 val updated = _sets.value.replace(set) {
                     it.uid == set.uid
                 }
                 _sets.update { updated }
                 workoutRepository.updateSet(set)
-            }catch (e:Exception){
+            } catch (e : Exception) {
                 onError(e)
             }
         }
@@ -254,12 +242,12 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
     fun deleteExerciseSlot(slot : ExerciseSlot) {
         viewModelScope.launch {
 
-            try{
+            try {
                 _exerciseSlots.update {
                     it.filter { it.uid != slot.uid }
                 }
                 workoutRepository.deleteExerciseSlot(slot)
-            }catch (e:Exception){
+            } catch (e : Exception) {
                 onError(e)
             }
         }
@@ -268,7 +256,7 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
 
     fun updateColors(pair : Pair<Color , Color>) {
         viewModelScope.launch {
-            try{
+            try {
                 _metadata.update {
                     it.copy(
                         gradientStart = pair.first.hashCode() ,
@@ -276,7 +264,7 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
                     )
                 }
                 workoutRepository.updateMetadata(_metadata.value)
-            }catch (e:Exception){
+            } catch (e : Exception) {
                 onError(e)
             }
         }
@@ -284,10 +272,10 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
 
     fun updateMetadata(metadata : WorkoutMetadata) {
         viewModelScope.launch {
-            try{
+            try {
                 _metadata.update { metadata }
                 workoutRepository.updateMetadata(metadata)
-            }catch (e:Exception){
+            } catch (e : Exception) {
                 onError(e)
             }
         }
@@ -302,7 +290,7 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
                 }
                 _bottomSheetIsLoading.update { false }
             }.onFailure {
-              onError(Exception(it))
+                onError(Exception(it))
             }
         }
     }
@@ -310,25 +298,26 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
     fun removeSet(set : SetSlot) {
         viewModelScope.launch(Dispatchers.IO) {
 
-            try{
+            try {
                 val newList = _sets.value.minus(set)
 
                 _sets.update { newList }
                 workoutRepository.removeSet(set)
-            }catch (e:Exception){
+            } catch (e : Exception) {
                 onError(e)
             }
         }
     }
 
-    fun addNewSet(reps : Int , weight : Double , week : Week) {
+    fun addNewSet(type : Int , reps : Int , weight : Double , week : Week) {
         viewModelScope.launch(Dispatchers.IO) {
-            try{
+            try {
                 val setIndex = _sets.value.count { it.weekUid == week.uid }
-                val set = SetSlot(weightInKgs = weight , reps = reps , week.uid , type = SetSlot.WorkingSet,setIndex)
+                val set =
+                    SetSlot(weightInKgs = weight , reps = reps , week.uid , type = type , setIndex)
                 _sets.update { it + set }
                 workoutRepository.addSets(sets = arrayOf(set))
-            }catch (e:Exception){
+            } catch (e : Exception) {
                 onError(e)
             }
         }
@@ -336,7 +325,7 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
 
     fun addExercise(exercise : Exercise) {
         viewModelScope.launch(Dispatchers.IO) {
-            try{
+            try {
                 val lastIndex = _exerciseSlots.value.maxOfOrNull { it.index } ?: -1
                 val slotUid = System.currentTimeMillis()
                 val slot = ExerciseSlot(
@@ -381,16 +370,16 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
                     workoutRepository.addExerciseSlot(slot)
                     _exerciseSlots.update { it + slot }
                 }
-            }catch (e:Exception){
+            } catch (e : Exception) {
                 onError(e)
             }
         }
     }
 
-    fun onStartWorkout(onCreatedSession:(uid:Long)->Unit) {
+    fun onStartWorkout(onCreatedSession : (uid : Long) -> Unit) {
         viewModelScope.launch {
             val isValid = checkIfStartedPointsProvided()
-            if(!isValid) {
+            if (!isValid) {
                 onError(IllegalArgumentException("Please provide a starting point for every exercise"))
                 return@launch
             }
@@ -406,17 +395,46 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
         }
     }
 
-    private fun checkIfStartedPointsProvided():Boolean{
+    private fun checkIfStartedPointsProvided() : Boolean {
         var result = true
 
-        _exerciseSlots.value.onEach {slot->
-            val hasStartingPoint = _weeks.value.any { week->week.exerciseSlotUid == slot.uid }
-            if(!hasStartingPoint) result = false
+        _exerciseSlots.value.onEach { slot ->
+            val hasStartingPoint = _weeks.value.any { week -> week.exerciseSlotUid == slot.uid }
+            if (!hasStartingPoint) result = false
         }
         return result
     }
 
     fun generateWarmUpSets(it : Week) {
+
+    }
+
+    fun onEditRestTime(slot : ExerciseSlot , type : Int , value : Int) {
+
+        val schema = getSchema(slot.category)
+        Log.d("Test" , "Get Schema Uid = ${schema.uid} , type = ${type}")
+        val newSchema = if (type == SetSlot.WarmUp) schema.copy(warmUpSetRestTimeInSeconds = value)
+            .apply { this.uid = schema.uid }
+        else schema.copy(workingSetRestTimeInSeconds = value).apply { this.uid = schema.uid }
+        viewModelScope.launch(Dispatchers.IO) {
+            _appState.update {
+                workoutRepository.updateSchema(newSchema , it?.trainingParameters?.uid ?: -1)
+                it?.copy(
+                    trainingParameters = when (slot.category) {
+                        Exercise.Companion.ExerciseCategory.PrimaryCompound.ordinal -> it.trainingParameters.copy(
+                            primaryCompoundSchema = newSchema.apply { uid = schema.uid }
+                        )
+                        Exercise.Companion.ExerciseCategory.SecondaryCompound.ordinal -> it.trainingParameters.copy(
+                            secondaryCompoundSchema = newSchema.apply { uid = schema.uid }
+                        )
+                        else -> it.trainingParameters.copy(
+                            isolationSchema = newSchema.apply { uid = schema.uid }
+                        )
+                    }
+                )
+            }
+
+        }
 
     }
 }

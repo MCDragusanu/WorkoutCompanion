@@ -1,13 +1,13 @@
 package com.example.workoutcompanion.core.data.user_database.local
 
 import android.util.Log
-import com.example.workoutcompanion.core.data.di.ComponentType
+
 import com.example.workoutcompanion.core.data.user_database.common.UserProfile
 import com.example.workoutcompanion.core.data.user_database.common.guestProfile
 import javax.inject.Inject
 
 
-class LocalProfileRepositoryTestImpl @Inject constructor(@ComponentType(true) private val dao : UserDao):LocalProfileRepository {
+class LocalProfileRepositoryTestImpl:LocalProfileRepository {
     override suspend fun updateProfile(
         userUid : String ,
         newProfile : UserProfile

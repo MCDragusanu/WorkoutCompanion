@@ -31,7 +31,7 @@ class EntryActivitiy : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.CREATED){
-               // FirebaseAuth.getInstance().signOut()
+            // FirebaseAuth.getInstance().signOut()
                     FirebaseAuth.getInstance().currentUser?.let {
                     startMainActivity(it.uid)
                 }

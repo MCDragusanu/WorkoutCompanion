@@ -3,7 +3,8 @@ package com.example.workoutcompanion.core.presentation.main_navigations.workout_
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.workoutcompanion.core.data.di.ComponentType
+import com.example.workoutcompanion.core.data.di.Testing
+
 
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
 import com.example.workoutcompanion.core.data.user_database.common.UserProfile
@@ -20,37 +21,37 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
-class WorkoutSessionViewModel @Inject constructor(private val workoutRepository : WorkoutRepository ,@ComponentType(false) private val profileRepository : ProfileRepository):ViewModel() {
+class WorkoutSessionViewModel @Inject constructor(private val workoutRepository : WorkoutRepository ,@Testing private val profileRepository : ProfileRepository):ViewModel() {
 
     private var _sessionUid : Long? = null
 
     private var _userUid : String? = null
 
-    private var _profile:UserProfile? = null
+    private var _profile : UserProfile? = null
 
     private val _session = MutableStateFlow<WorkoutSession?>(null)
     val session = _session.asStateFlow()
 
-    fun retriveProfile(uid:String) {
+    fun retriveProfile(uid : String) {
         _userUid = uid
         viewModelScope.launch(Dispatchers.IO) {
             profileRepository.getProfileFromLocalSource(uid).onSuccess {
 
-              _profile = it
+                _profile = it
             }.onFailure {
                 Log.d("Test" , it.stackTraceToString())
             }
         }
     }
 
-    fun retrieveSession(sessionUid:Long){
+    fun retrieveSession(sessionUid : Long) {
         viewModelScope.launch(Dispatchers.IO) {
             Log.d("Test" , "Received session uid = $sessionUid")
             _sessionUid = sessionUid
             workoutRepository.getSession(sessionUid).onFailure {
                 it.printStackTrace()
             }.onSuccess {
-                withContext(Dispatchers.Main){
+                withContext(Dispatchers.Main) {
 
                     _session.emit(it)
                 }

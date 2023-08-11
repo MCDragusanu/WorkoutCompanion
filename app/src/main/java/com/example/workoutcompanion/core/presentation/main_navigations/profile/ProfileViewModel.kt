@@ -3,7 +3,8 @@ package com.example.workoutcompanion.core.presentation.main_navigations.profile
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.workoutcompanion.core.data.di.ComponentType
+
+import com.example.workoutcompanion.core.data.di.Testing
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
 import com.example.workoutcompanion.core.data.user_database.common.UserProfile
 import com.example.workoutcompanion.core.presentation.app_state.AppStateManager
@@ -17,7 +18,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ProfileViewModel @Inject constructor(@ComponentType(false) private val userRepository : ProfileRepository , @ComponentType(false) private val appStateManager : AppStateManager):ViewModel() {
+class ProfileViewModel @Inject constructor(@Testing() private val userRepository : ProfileRepository):ViewModel() {
 
 
 

@@ -58,9 +58,9 @@ class ProgressionOverloadManager {
     }
 
     //using a numerical approximation of the relationship between the rep and weight percent
-    fun repToPercent(rep : Int) : Double {
+    fun repToPercent(rep : Int , difficultyCoeff:Float) : Double {
         val numerator = 2.0
-        return (39.10146 + 65.3282 / numerator.pow(rep / 12.07655)) * 0.01
+        return (39.10146 + 65.3282 / numerator.pow(rep / 12.07655)- difficultyCoeff) * 0.01
     }
 
     //the inverse function to calculate the rep
@@ -77,7 +77,7 @@ class ProgressionOverloadManager {
         val reps = schema.repRange.first
         val weight = roundToMultiple(
             schema.smallestWeightIncrementAvailable ,
-            oneRepMax * repToPercent(reps)
+            oneRepMax * repToPercent(reps , schema.difficultyCoeff)
         )
         return startingCondition.copy(sets = setCount , reps = reps , weightInKgs = weight)
     }

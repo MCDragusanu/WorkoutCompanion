@@ -3,7 +3,8 @@ package com.example.workoutcompanion.core.presentation.main_navigations.database
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.workoutcompanion.core.data.di.ComponentType
+
+import com.example.workoutcompanion.core.data.di.Testing
 import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseDocument
 import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseRepository
 import com.example.workoutcompanion.core.domain.model.exercise.Exercise
@@ -13,16 +14,15 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class DatabaseScreenViewModel @Inject constructor (
-    @ComponentType(false)
+    @Testing
     private val repo:ExerciseRepository,
-    @ComponentType(false)
+    @Testing
     private val appStateManager : AppStateManager
     ):ViewModel() {
 
@@ -57,7 +57,7 @@ class DatabaseScreenViewModel @Inject constructor (
       viewModelScope.launch(Dispatchers.IO) {
 
           val collection = retrieveCachedDatabase().map { it.toExercise() }
-          val mapped = mapExercisesToMusleGroup(collection)
+          val mapped = mapExercisesToMuscleGroup(collection)
 
           _isLoading.update { false }
           _presentedList.update { mapped }
@@ -65,20 +65,13 @@ class DatabaseScreenViewModel @Inject constructor (
       }
   }
 
-    private var appState:WorkoutCompanionAppState? = null
-    fun retrieveAppState(userUid:String){
-        viewModelScope.launch(Dispatchers.IO){
-            appStateManager.getAppState(userUid).collect{
-                if(it == null ){
-                    Log.d("Test" , "Database ViewModel ::Current App State is null")
-                }
-                appState = it
-                Log.d("Test" , "Received user = ${it?.userProfile}" )
-            }
-        }
+    private val _appState = MutableStateFlow<WorkoutCompanionAppState?>(null)
+    val appState = _appState.asStateFlow()
+    fun setAppState(state:WorkoutCompanionAppState?){
+        _appState.update {  state}
     }
 
-  private fun mapExercisesToMusleGroup(list : List<Exercise>) : Map<String , List<Exercise>> {
+  private fun mapExercisesToMuscleGroup(list : List<Exercise>) : Map<String , List<Exercise>> {
       return list.associate { exercise ->
           val primaryMuscleGroup = exercise.movement.primaryMuscleGroups.first().first.name
           Pair(

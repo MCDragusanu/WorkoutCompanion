@@ -4,7 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.workoutcompanion.common.extentions.replace
-import com.example.workoutcompanion.core.data.di.ComponentType
+
+import com.example.workoutcompanion.core.data.di.Testing
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
 import com.example.workoutcompanion.core.data.user_database.common.UserProfile
 import com.example.workoutcompanion.core.data.user_database.common.guestProfile
@@ -35,10 +36,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TrainingProgramViewModel @Inject constructor(
-    @ComponentType(false)
+    @Testing
     private val profileRepository: ProfileRepository ,
-    @ComponentType(false)
-    private val appStateManager : AppStateManager ,
+
     private val workoutRepository: WorkoutRepository ,
     private val progressionManager: ProgressionOverloadManager
 ) : ViewModel() {

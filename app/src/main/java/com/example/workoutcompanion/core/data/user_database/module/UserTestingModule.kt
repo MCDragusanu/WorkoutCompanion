@@ -3,7 +3,8 @@ package com.example.workoutcompanion.core.data.user_database.module
 import android.app.Application
 import android.util.Log
 import com.example.workoutcompanion.core.data.auth_service.AuthModule
-import com.example.workoutcompanion.core.data.di.ComponentType
+import com.example.workoutcompanion.core.data.di.Testing
+
 import com.example.workoutcompanion.core.data.user_database.cloud.CloudProfileRepositoryTestImpl
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
 import com.example.workoutcompanion.core.data.user_database.common.ProfileRepositoryImpl
@@ -21,35 +22,34 @@ import dagger.hilt.components.SingletonComponent
 object UserTestingModule {
 
     @Provides
-    @ComponentType(true)
+    @Testing
     fun provideTestUserDatabase(application : Application) : TestUserDatabase {
         Log.d("Test" , "Provided testing User Database")
         return TestUserDatabase.getInstance(application)
     }
 
     @Provides
-    @ComponentType(true)
+    @Testing
     fun provideTestCloudRepository() : CloudProfileRepository {
         Log.d("Test" , "Provided test Cloud Profile Repository")
         return CloudProfileRepositoryTestImpl()
     }
 
     @Provides
-    @ComponentType(true)
-    fun provideTestLocalRepository(application : Application) : LocalProfileRepositoryTestImpl {
+    @Testing
+    fun provideTestLocalRepository() : LocalProfileRepositoryTestImpl {
         Log.d("Test" , "Provided test Local Profile Repository")
-        provideTestUserDatabase(application).apply {
-            return LocalProfileRepositoryTestImpl(this.dao)
-        }
+
+            return LocalProfileRepositoryTestImpl()
     }
 
     @Provides
-    @ComponentType(testing = true)
-    fun provideProfileRepository(application : Application) : ProfileRepository {
+    @Testing
+    fun provideProfileRepository() : ProfileRepository {
         Log.d("Test" , "Provided test Profile Repository")
         return ProfileRepositoryImpl(
             this.provideTestCloudRepository() ,
-            this.provideTestLocalRepository(application) ,
+            this.provideTestLocalRepository() ,
             AuthModule.provideTestAuthService()
         )
 

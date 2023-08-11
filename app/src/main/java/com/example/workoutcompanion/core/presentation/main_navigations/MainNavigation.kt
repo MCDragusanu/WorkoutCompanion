@@ -60,7 +60,9 @@ object MainNavigation {
         val scope = rememberCoroutineScope()
 
 
-
+        val databaseScreenViewModel = hiltViewModel<DatabaseScreenViewModel>().apply {
+            this.setAppState(appState)
+        }
         val profileViewModel = hiltViewModel<ProfileViewModel>().apply {
             this.setAppState(appState)
         }
@@ -83,10 +85,11 @@ object MainNavigation {
                 hideNavBar = {
                     scope.launch { navBarIsVisible.emit(false) }
                 } ,
+                appState = appState,
                 profileViewModel = profileViewModel ,
                 trainingProgramViewModel = trainingProgramViewModel ,
                 homeViewModel = homeViewModel ,
-                databaseScreenViewModel = hiltViewModel())
+                databaseScreenViewModel = databaseScreenViewModel)
         }
 
     }
@@ -149,6 +152,7 @@ object MainNavigation {
         trainingProgramViewModel : TrainingProgramViewModel ,
         homeViewModel : HomeViewModel ,
         profileViewModel : ProfileViewModel ,
+        appState : WorkoutCompanionAppState?,
         startOnBoardFlow : () -> Unit ,
         navController : NavHostController ,
         hideNavBar : () -> Unit ,
@@ -204,7 +208,7 @@ object MainNavigation {
                 val userUid = it.arguments?.getString("userUid") ?: guestProfile.uid
 
                 val workoutEditorViewModel = hiltViewModel<WorkoutEditorViewModel>().apply {
-                    this.retrieveAppState(userUid)
+                    this.retrieveAppState(appState)
                     this.retrieveWorkout(workoutUid)
                 }
                 WorkoutEditorScreen(viewModel = workoutEditorViewModel , onBackIsPressed = {
