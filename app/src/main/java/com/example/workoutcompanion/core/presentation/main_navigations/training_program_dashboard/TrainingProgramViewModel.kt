@@ -37,9 +37,6 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TrainingProgramViewModel @Inject constructor(
-    @Production
-    private val profileRepository: ProfileRepository ,
-
     private val workoutRepository: WorkoutRepository ,
     private val progressionManager: ProgressionOverloadManager
 ) : ViewModel() {

@@ -25,9 +25,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    @Production
+    @Testing
     private val auth : AuthManager,
-    @Production
+    @Testing
     private val repository : ExerciseRepository,
 
 

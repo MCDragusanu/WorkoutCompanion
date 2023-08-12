@@ -9,6 +9,7 @@ data class SetSlot(
     val weightInKgs:Double ,
     val reps:Int ,
     val weekUid:Long ,
+    val exerciseSlotUid:Long,
     val type:Int,
     val index:Int){
     @PrimaryKey(autoGenerate = true) var uid:Int = 0

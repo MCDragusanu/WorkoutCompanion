@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(@Production private val repository : ProfileRepository ):ViewModel(){
+class HomeViewModel @Inject constructor(@Testing private val repository : ProfileRepository ):ViewModel(){
 
     //TODO handle the logic to see if the user has a account but no profile in db
 

@@ -34,29 +34,32 @@ interface WorkoutRepository {
    suspend fun getLatestWeek(uid : Long) :Result<Week?>
    suspend fun addSession(session : WorkoutSession):Result<Nothing?>
    suspend fun getSession(sessionUid : Long):Result<WorkoutSession?>
+   suspend fun getExerciseSlotByUid( uid:Long):Result<ExerciseSlot>
+   suspend fun getSetByUid(uid : Int) :Result<SetSlot>
+   suspend fun updateSession(session : WorkoutSession):Result<Nothing?>
 
-   /*suspend fun addExerciseSlot(slot : ExerciseSlot) : Result<Nothing?>
+    /*suspend fun addExerciseSlot(slot : ExerciseSlot) : Result<Nothing?>
 
-   suspend fun addOneRepMax(oneRepMax : OneRepMax) : Result<Nothing?>
+    suspend fun addOneRepMax(oneRepMax : OneRepMax) : Result<Nothing?>
 
-   suspend fun addSetSlot(setSlot : SetSlot) : Result<Nothing?>
+    suspend fun addSetSlot(setSlot : SetSlot) : Result<Nothing?>
 
-   suspend fun addWeek(week : Week) : Result<Nothing?>
+    suspend fun addWeek(week : Week) : Result<Nothing?>
 
-   suspend fun addWorkoutMetadata(workoutMetadata : WorkoutMetadata) : Result<Nothing?>
+    suspend fun addWorkoutMetadata(workoutMetadata : WorkoutMetadata) : Result<Nothing?>
 
-   suspend fun addSession(session : WorkoutSession) : Result<Nothing?>
+    suspend fun addSession(session : WorkoutSession) : Result<Nothing?>
 
-   suspend fun updateExerciseSlot(slot : ExerciseSlot) : Result<Nothing?>
+    suspend fun updateExerciseSlot(slot : ExerciseSlot) : Result<Nothing?>
 
-   suspend fun updateOneRepMax(oneRepMax : OneRepMax) : Result<Nothing?>
+    suspend fun updateOneRepMax(oneRepMax : OneRepMax) : Result<Nothing?>
 
-   suspend fun updateSetSlot(setSlot : SetSlot) : Result<Nothing?>
+    suspend fun updateSetSlot(setSlot : SetSlot) : Result<Nothing?>
 
-   suspend fun updateWeek(week : Week) : Result<Nothing?>
+    suspend fun updateWeek(week : Week) : Result<Nothing?>
 
-   suspend fun updateWorkoutMetadata(workoutMetadata : WorkoutMetadata) : Result<Nothing?>
+    suspend fun updateWorkoutMetadata(workoutMetadata : WorkoutMetadata) : Result<Nothing?>
 
-   suspend fun updateSession(session : WorkoutSession) : Result<Nothing?>*/
+    suspend fun updateSession(session : WorkoutSession) : Result<Nothing?>*/
 
 }

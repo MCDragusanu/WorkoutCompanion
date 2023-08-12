@@ -432,4 +432,31 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
             Result.failure(e)
         }
     }
+
+    override suspend fun getExerciseSlotByUid(uid : Long) : Result<ExerciseSlot> {
+        return try {
+            Result.success(exerciseSlotDao.getSlotById(uid))
+        }catch (e:Exception){
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getSetByUid(uid : Int) : Result<SetSlot> {
+        return try {
+            Result.success(setSlotDao.getSetByUid(uid))
+        }catch (e:Exception){
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateSession(session : WorkoutSession) : Result<Nothing?> {
+        return try {
+            workoutSessionDao.updateSession(session = session)
+            Log.d("Test" , "Session uid = ${session.uid}")
+            Result.success(null)
+        }catch (e:Exception){
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
 }

@@ -30,15 +30,16 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 
 @HiltViewModel
 class WorkoutEditorViewModel @Inject constructor(private val progressionManager:ProgressionOverloadManager ,
                                                  private val workoutRepository : WorkoutRepository ,
-                                                 @Production
+                                                 @Testing
                                                  private val userRepository  : ProfileRepository ,
-                                                 @Production
+                                                 @Testing
                                                  private val exerciseRepository : ExerciseRepository ,
                                                  ):ViewModel() {
 
@@ -315,7 +316,14 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
             try {
                 val setIndex = _sets.value.count { it.weekUid == week.uid }
                 val set =
-                    SetSlot(weightInKgs = weight , reps = reps , week.uid , type = type , setIndex)
+                    SetSlot(
+                        weightInKgs = weight ,
+                        reps = reps ,
+                        week.uid ,
+                        exerciseSlotUid = week.exerciseSlotUid ,
+                        type = type ,
+                        setIndex
+                    )
                 _sets.update { it + set }
                 workoutRepository.addSets(sets = arrayOf(set))
             } catch (e : Exception) {
@@ -378,21 +386,39 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
     }
 
     fun onStartWorkout(onCreatedSession : (uid : Long) -> Unit) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val isValid = checkIfStartedPointsProvided()
             if (!isValid) {
                 onError(IllegalArgumentException("Please provide a starting point for every exercise"))
                 return@launch
             }
-            GenerateWorkoutSession().execute(
-                workoutMetadata = _metadata.value ,
-                workoutRepository
-            ).onFailure {
-                onError(Exception(it))
-            }.onSuccess {
-                workoutRepository.addSession(it)
-                onCreatedSession(it.uid)
+
+            //TODO if there is a session created today for that workout show that one
+            //TODO else create this one
+            //TODO in the session screen the user can delete it and go back to it
+            //TODO make the start workout button to say something like "Continue Workout" or "Resume Workout" if there is an available option
+            val latestSets = mutableListOf<SetSlot>()
+            _exerciseSlots.value.onEach {slot->
+                val latestWeek =
+                    _weeks.value.filter { it.exerciseSlotUid == slot.uid }.maxByOrNull { it.index }
+                Log.d("Test" , "Latest Week = ${latestWeek}")
+                latestWeek?.let { week ->
+                     _sets.value.filter { it.weekUid == week.uid }.sortedBy { it.type }.onEach {
+                         Log.d("Test" , it.uid.toString())
+                        latestSets.add(it)
+                    }
+                }
             }
+            val newSession = GenerateWorkoutSession().buildSession(
+                workoutMetadata = _metadata.value ,
+                slotList = _exerciseSlots.value ,
+                setList = latestSets
+            )
+            workoutRepository.addSession(newSession)
+            withContext(Dispatchers.Main){
+                onCreatedSession(newSession.uid)
+            }
+
         }
     }
 

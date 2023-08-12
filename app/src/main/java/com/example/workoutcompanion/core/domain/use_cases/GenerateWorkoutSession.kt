@@ -2,51 +2,32 @@ package com.example.workoutcompanion.core.domain.use_cases
 
 import android.util.Log
 import com.example.workoutcompanion.core.data.workout.WorkoutRepository
+import com.example.workoutcompanion.core.data.workout.exercise_slot.ExerciseSlot
+import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot
 import com.example.workoutcompanion.core.data.workout.week.Week
 import com.example.workoutcompanion.core.data.workout.workout.WorkoutMetadata
 import com.example.workoutcompanion.core.data.workout.workout_session.WorkoutSession
 
 class GenerateWorkoutSession {
 
-    suspend fun execute(
-        workoutMetadata : WorkoutMetadata ,
-        workoutRepository : WorkoutRepository
-    ) : Result<WorkoutSession> {
-        return try {
-            val slots = workoutRepository.getSlotsForWorkout(workoutMetadata.uid).onFailure { throw it }.getOrNull()
-            var string = ""
-            slots?.onEach {
-                workoutRepository.getLatestWeek(it.uid).onSuccess { latestWeek ->
+    fun buildSession(workoutMetadata : WorkoutMetadata,
+                     slotList:List<ExerciseSlot>,
 
-                    if(latestWeek == null){
-                        throw NullPointerException("No Week found")
-                    }
-                    val sets = workoutRepository.getSetsForWeek(latestWeek).getOrNull()
-                        ?: throw NullPointerException("No sets found")
-
-                    string += buildString {
-                        append("{")
-                        append("slotUid:${it.uid}")
-                        append("-")
-                        sets.sortedBy { it.index }.onEach {
-                            append("setUid:${it.uid}")
-                            append("-")
-                        }
-                        append("}")
-                    }
-                }
-            }
-            Result.success(
-                WorkoutSession(
-                    uid = System.currentTimeMillis() ,
-                    ownerUid = workoutMetadata.ownerUid ,
-                    status = 0 ,
-                    content = string
-                )
-            )
-        } catch (e : Exception) {
-            e.printStackTrace()
-            Result.failure(e)
-        }
+                     setList:List<SetSlot>
+                     ):WorkoutSession {
+        val uid = System.currentTimeMillis()
+        val ownerUid = workoutMetadata.ownerUid
+        val status = WorkoutSession.Companion.SessionState.STARTED.ordinal
+        val slots = WorkoutSession.buildUidString(slotList.map { it.uid })
+        val sets = WorkoutSession.buildUidString(setList.map { it.uid.toLong() })
+        return WorkoutSession(
+            uid = uid ,
+            workoutUid = workoutMetadata.uid,
+            ownerUid = ownerUid ,
+            status = status ,
+            slotList = slots ,
+            cursorPosition = 0 ,
+            setList = sets
+        )
     }
 }

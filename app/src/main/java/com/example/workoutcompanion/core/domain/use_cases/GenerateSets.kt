@@ -21,6 +21,7 @@ class GenerateSets {
                      week.weightInKgs * (startingPercent*0.01 + it * dW*0.01)
                  ) ,
                  reps = schema.warmUpRepCount ,
+                 exerciseSlotUid = week.exerciseSlotUid,
                  weekUid = week.uid ,
                  type = SetSlot.WarmUp ,
                  index = it
@@ -30,6 +31,7 @@ class GenerateSets {
          repeat(week.sets){
              val set = SetSlot(
                  weightInKgs = week.weightInKgs ,
+                 exerciseSlotUid = week.exerciseSlotUid,
                  reps = week.reps ,
                  weekUid = week.uid ,
                  type = SetSlot.WorkingSet,

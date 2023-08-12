@@ -27,13 +27,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class OnBoardViewModel @Inject constructor(
-    @Production
+    @Testing
     private val repository : ExerciseRepository ,
 
-    @Production
+    @Testing
     private val authManager : AuthManager ,
 
-    @Production
+    @Testing
     private val userRepo : ProfileRepository ,
 
 

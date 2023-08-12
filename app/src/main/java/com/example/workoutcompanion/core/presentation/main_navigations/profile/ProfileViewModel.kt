@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ProfileViewModel @Inject constructor(@Production() private val userRepository : ProfileRepository):ViewModel() {
+class ProfileViewModel @Inject constructor(@Testing() private val userRepository : ProfileRepository):ViewModel() {
 
 
 

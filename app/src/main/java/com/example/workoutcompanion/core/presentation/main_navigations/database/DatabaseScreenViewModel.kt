@@ -21,10 +21,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DatabaseScreenViewModel @Inject constructor (
-    @Production
+    @Testing
     private val repo:ExerciseRepository,
-    @Production
-    private val appStateManager : AppStateManager
+
     ):ViewModel() {
 
 

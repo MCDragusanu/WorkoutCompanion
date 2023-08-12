@@ -230,7 +230,7 @@ object MainNavigation {
                 val sessionUid = it.arguments?.getLong("sessionUid") ?: -1
                 val userUid = it.arguments?.getString("userUid") ?: guestProfile.uid
                 val viewModel = hiltViewModel<WorkoutSessionViewModel>().apply {
-                    this.retriveProfile(userUid)
+                    this.retrieveProfile(userUid)
                     this.retrieveSession(sessionUid)
                 }
                 WorkoutSessionScreen.invoke(viewModel = viewModel)

@@ -19,7 +19,7 @@ interface ExerciseSlotDao {
     suspend fun getSlotsForWorkout(workoutUid:Long):List<ExerciseSlot>
 
     @Query("Select * from exercise_slot_table where uid = :uid")
-    suspend fun getSlotById(uid:Long): ExerciseSlot?
+    suspend fun getSlotById(uid:Long): ExerciseSlot
 
     @Query("DELETE from exercise_slot_table where uid = :uid")
     suspend fun deleteSlotByUid(uid : Long)
