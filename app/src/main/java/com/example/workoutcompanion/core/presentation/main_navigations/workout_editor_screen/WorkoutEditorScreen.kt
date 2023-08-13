@@ -729,7 +729,7 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
         val currentSets =
             if (currentWeek == null) emptyList() else sets.filter { it.weekUid == currentWeek!!.uid }
                 .sortedBy { it.index }
-        var setType by remember { mutableStateOf(SetSlot.WorkingSet) }
+        var setType by remember { mutableStateOf(SetSlot.SetType.WorkingSet.ordinal) }
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -799,8 +799,8 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                                 horizontalAlignment = Alignment.Start ,
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                val warmUpSets = it.filter { it.type == SetSlot.WarmUp }
-                                val workingSets = it.filter { it.type == SetSlot.WorkingSet }
+                                val warmUpSets = it.filter { it.type == SetSlot.SetType.WarmUp.ordinal }
+                                val workingSets = it.filter { it.type == SetSlot.SetType.WorkingSet.ordinal }
                                 Column(
                                     modifier = Modifier.wrapContentSize() ,
                                     verticalArrangement = Arrangement.spacedBy(4.dp) ,
@@ -815,7 +815,7 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                                             tint = MaterialTheme.colorScheme.secondary ,
                                             modifier = Modifier.clickable {
                                                 showDialogueAddSets = true
-                                                setType = SetSlot.WarmUp
+                                                setType = SetSlot.SetType.WarmUp.ordinal
                                             }
                                         )
 
@@ -909,7 +909,7 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                                             text = "${getRestTimeForWorkingUpSets(exercise)} s" ,
                                             color = MaterialTheme.colorScheme.primary ,
                                             modifier = Modifier.clickable {
-                                                restTimeType = SetSlot.WorkingSet
+                                                restTimeType = SetSlot.SetType.WorkingSet.ordinal
                                                 showRestTimeDialogue = true
 
                                             })
@@ -949,7 +949,7 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
         }
         if(showRestTimeDialogue) {
             ChangeRestTimeDialogue(onDismiss = { showRestTimeDialogue = false } ,
-                currentInSeconds = if (restTimeType == SetSlot.WarmUp) getRestTimeForWarmUpSets(
+                currentInSeconds = if (restTimeType == SetSlot.SetType.WarmUp.ordinal) getRestTimeForWarmUpSets(
                     exercise
                 ) else getRestTimeForWorkingUpSets(exercise),
                 onSubmit ={value->

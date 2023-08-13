@@ -38,6 +38,8 @@ interface WorkoutRepository {
    suspend fun getSetByUid(uid : Int) :Result<SetSlot>
    suspend fun updateSession(session : WorkoutSession):Result<Nothing?>
 
+    suspend fun getLatestSessionUidForWorkout(_workoutUid : Long) : Result<Long?>
+
     /*suspend fun addExerciseSlot(slot : ExerciseSlot) : Result<Nothing?>
 
     suspend fun addOneRepMax(oneRepMax : OneRepMax) : Result<Nothing?>

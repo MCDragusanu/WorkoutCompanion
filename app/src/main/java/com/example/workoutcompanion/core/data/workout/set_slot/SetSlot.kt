@@ -11,10 +11,26 @@ data class SetSlot(
     val weekUid:Long ,
     val exerciseSlotUid:Long,
     val type:Int,
-    val index:Int){
-    @PrimaryKey(autoGenerate = true) var uid:Int = 0
-    companion object{
-       const val WarmUp = 0
-       const val WorkingSet = 1
+    val status:Int,
+    val index:Int) {
+    @PrimaryKey(autoGenerate = true)
+    var uid : Int = 0
+
+    companion object {
+
+    }
+
+    enum class SetType {
+        WarmUp ,
+        WorkingSet;
+    }
+    enum class SetStatus{
+        Failed,
+        Default,
+        Completed;
+        fun isFailed() = this ==Failed
+        fun isDefault() = this == Default
+
+        fun Completed() = this == Completed
     }
 }

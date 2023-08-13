@@ -14,8 +14,8 @@ interface WeekDao {
     @Update
     suspend fun udpateWeek(week : Week)
 
-    @Query("Select * from week_table WHERE exerciseSlotUID = :uid ORDER BY `index` ASC")
-    suspend fun getWeeksForSlotInASCOrder(uid:Long):List<Week>
+    @Query("Select * from week_table WHERE exerciseSlotUID = :exerciseSlot ORDER BY `index` ASC")
+    suspend fun getWeeksForSlotInASCOrder(exerciseSlot:Long):List<Week>
 
     @Query("DELETE from week_table WHERE exerciseSlotUID = :uid")
     suspend fun deleteWeeksForSlot(uid:Long)

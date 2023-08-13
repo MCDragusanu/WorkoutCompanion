@@ -1,6 +1,5 @@
 package com.example.workoutcompanion.core.presentation.main_navigations.workout_session
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -9,8 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,16 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.compose.getPalette
 import com.example.workoutcompanion.core.data.workout.exercise_slot.ExerciseSlot
 import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot
-import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot.Companion.WarmUp
-import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot.Companion.WorkingSet
+
 import com.example.workoutcompanion.core.presentation.main_navigations.MainNavigation
 import com.example.workoutcompanion.ui.Typography
 import com.example.workoutcompanion.ui.cardShapes
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 
 object WorkoutSessionScreen:MainNavigation.Screens("Workout_Session_Screen") {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -82,6 +78,20 @@ object WorkoutSessionScreen:MainNavigation.Screens("Workout_Session_Screen") {
                         }
                     }
                 }
+                if(exerciseSlots.isNotEmpty()){
+                    item {
+                        Row(modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight() , horizontalArrangement = Arrangement.SpaceBetween , verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = { viewModel.onPrevItem() }) {
+                                Icon(imageVector = Icons.Filled.ArrowCircleLeft , contentDescription = null )
+                            }
+                            IconButton(onClick = { viewModel.onNextItem() }) {
+                                Icon(imageVector = Icons.Filled.ArrowCircleRight , contentDescription = null )
+                            }
+                        }
+                    }
+                }
             }
         }
         LaunchedEffect(key1 = LocalContext.current) {
@@ -120,7 +130,7 @@ object WorkoutSessionScreen:MainNavigation.Screens("Workout_Session_Screen") {
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(40.dp) ,
-                    setSlot = it ,
+                    state = it ,
                     currentSet = currentSet ,
                     onNextItem = onNextItem ,
                     onPrevItem = onPrevItem ,
@@ -132,16 +142,16 @@ object WorkoutSessionScreen:MainNavigation.Screens("Workout_Session_Screen") {
     private @Composable
     fun SetCard(
         modifier : Modifier ,
-        setSlot : SetSlot ,
+        state : SetSlot ,
         currentSet : Flow<SetSlot?> ,
         onNextItem : () -> Unit ,
         onPrevItem : () -> Unit ,
     ) {
         val current by currentSet.collectAsState(initial = null)
         val containerColor =
-            if (setSlot.type == WarmUp) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer
+            if (state.type == SetSlot.SetType.WarmUp.ordinal) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer
         val backgroundColor by animateColorAsState(
-            targetValue = if (current != null && current!!.uid == setSlot.uid) MaterialTheme.colorScheme.tertiaryContainer else containerColor
+            targetValue = if (current != null && current!!.uid == state.uid) MaterialTheme.colorScheme.tertiaryContainer else containerColor
         )
 
         Card(
@@ -166,14 +176,21 @@ object WorkoutSessionScreen:MainNavigation.Screens("Workout_Session_Screen") {
                             .wrapContentHeight() ,
                         horizontalArrangement = Arrangement.spacedBy(8.dp , Alignment.Start)
                     ) {
-                        Text(text = "${setSlot.reps} reps " , color = Color.White)
+                        Text(text = "${state.reps} reps " , color = Color.White)
                         Text(text = "X" , color = Color.White)
                         Text(
-                            text = String.format("%.1f" , setSlot.weightInKgs) + " Kgs" ,
+                            text = String.format("%.1f" , state.weightInKgs) + " Kgs" ,
                             color = Color.White
                         )
+                       AnimatedVisibility(state.status == SetSlot.SetStatus.Completed.ordinal){
+                            Icon(imageVector = Icons.Filled.Check , contentDescription = null , tint = getPalette().current.successColor)
+                        }
+                        AnimatedVisibility(state.status == SetSlot.SetStatus.Failed.ordinal){
+                            Icon(imageVector = Icons.Filled.Error , contentDescription = null , tint = getPalette().current.successColor)
+                        }
+
                     }
-                    AnimatedVisibility(visible = current != null && current!!.uid == setSlot.uid) {
+                    AnimatedVisibility(visible = current != null && current!!.uid == state.uid) {
                         Row(
                             modifier = Modifier.wrapContentSize() ,
                             horizontalArrangement = Arrangement.spacedBy(

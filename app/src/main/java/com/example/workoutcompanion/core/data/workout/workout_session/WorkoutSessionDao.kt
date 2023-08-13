@@ -22,4 +22,7 @@ interface WorkoutSessionDao {
     suspend fun deleteAllSessionsForUser(ownerUid:String)
     @Query("Select * from workout_session_table where uid = :sessionUid")
      fun getSessionByUid(sessionUid : Long) : WorkoutSession?
+
+     @Query("SELECT uid from workout_session_table WHERE uid = ( SELECT MAX(uid) FROM workout_session_table WHERE workoutUid = :workoutUid )")
+     suspend fun getLatestSession(workoutUid:Long):Long?
 }

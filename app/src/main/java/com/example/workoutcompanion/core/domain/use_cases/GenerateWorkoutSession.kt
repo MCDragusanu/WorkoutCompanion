@@ -1,10 +1,8 @@
 package com.example.workoutcompanion.core.domain.use_cases
 
 import android.util.Log
-import com.example.workoutcompanion.core.data.workout.WorkoutRepository
 import com.example.workoutcompanion.core.data.workout.exercise_slot.ExerciseSlot
 import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot
-import com.example.workoutcompanion.core.data.workout.week.Week
 import com.example.workoutcompanion.core.data.workout.workout.WorkoutMetadata
 import com.example.workoutcompanion.core.data.workout.workout_session.WorkoutSession
 
@@ -12,9 +10,8 @@ class GenerateWorkoutSession {
 
     fun buildSession(workoutMetadata : WorkoutMetadata,
                      slotList:List<ExerciseSlot>,
-
                      setList:List<SetSlot>
-                     ):WorkoutSession {
+    ):WorkoutSession {
         val uid = System.currentTimeMillis()
         val ownerUid = workoutMetadata.ownerUid
         val status = WorkoutSession.Companion.SessionState.STARTED.ordinal

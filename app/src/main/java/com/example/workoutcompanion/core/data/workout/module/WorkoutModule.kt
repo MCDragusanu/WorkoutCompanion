@@ -28,7 +28,7 @@ object WorkoutModule {
                 this.workoutMetadataDao ,
                 this.workoutSessionDao,
                 this.progressioDao,
-                this.trainingParametersDao
+                this.trainingParametersDao,
             )
         }
     }

@@ -65,8 +65,8 @@ class ProgressionOverloadManager {
     }
 
     //the inverse function to calculate the rep
-    fun percentToRep(percent : Double) : Int {
-        return (12.07655 * (log2(65.3282) - log2(percent - 39.10146))).toInt()
+    fun percentToRep(percent : Double) : Double {
+        return (12.07655 * (log2(65.3282) - log2(percent - 39.10146)))
     }
 
     private fun convertStartingConditionToPlan(
@@ -110,15 +110,17 @@ class ProgressionOverloadManager {
         val dW = (100.0 - startingPercent)/schema.warmUpSetCount
         repeat(schema.warmUpSetCount) {
             val set = SetSlot(
+
                 weightInKgs = roundToMultiple(
                     schema.smallestWeightIncrementAvailable ,
                     week.weightInKgs * (startingPercent*0.01 + it * dW*0.01)
                 ) ,
-                reps = percentToRep(startingPercent*0.01 + it * dW*0.01) ,
+                reps = (percentToRep(startingPercent + it * dW) * 100).toInt(),
                 exerciseSlotUid = week.exerciseSlotUid,
                 weekUid = week.uid ,
-                type = SetSlot.WarmUp ,
-                index = it
+                type = SetSlot.SetType.WarmUp.ordinal ,
+                index = it,
+                status = SetSlot.SetStatus.Default.ordinal,
             )
             result += set
         }
@@ -128,7 +130,8 @@ class ProgressionOverloadManager {
                 exerciseSlotUid = week.exerciseSlotUid,
                 reps = week.reps ,
                 weekUid = week.uid ,
-                type = SetSlot.WorkingSet,
+                type = SetSlot.SetType.WorkingSet.ordinal ,
+                status = SetSlot.SetStatus.Default.ordinal,
                 index = schema.warmUpSetCount+it
             )
             result+=set

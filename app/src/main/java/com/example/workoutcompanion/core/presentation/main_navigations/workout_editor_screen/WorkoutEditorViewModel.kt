@@ -17,6 +17,7 @@ import com.example.workoutcompanion.core.data.workout.one_rep_max.OneRepMax
 import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot
 import com.example.workoutcompanion.core.data.workout.week.Week
 import com.example.workoutcompanion.core.data.workout.workout.WorkoutMetadata
+import com.example.workoutcompanion.core.data.workout.workout_session.WorkoutSession
 import com.example.workoutcompanion.core.domain.model.exercise.Exercise
 import com.example.workoutcompanion.core.domain.model.progression_overload.ExerciseProgressionSchema
 import com.example.workoutcompanion.core.domain.use_cases.GenerateWorkoutSession
@@ -24,6 +25,7 @@ import com.example.workoutcompanion.core.presentation.app_state.WorkoutCompanion
 import com.example.workoutcompanion.workout_designer.progression_overload.ProgressionOverloadManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -78,7 +80,7 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
     val sets = _sets.asStateFlow()
 
 
-    private var _profile : UserProfile? = null
+
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
@@ -207,11 +209,12 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
                 workoutRepository.addOneRepMax(
                     OneRepMax(
                         slot.exerciseUid ,
-                        userUid = _profile?.uid ?: guestProfile.uid ,
+                        userUid = _appState.value?.userProfile?.uid ?: guestProfile.uid ,
                         weightKgs = oneRepMax ,
                         timeStamp = System.currentTimeMillis()
                     )
                 )
+                Log.d("Test" , "Created uids = ${sets.map { it.uid }}")
                 workoutRepository.addWeek(startingPoint)
                 workoutRepository.addSets(*sets.toTypedArray())
 
@@ -319,7 +322,9 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
                         week.uid ,
                         exerciseSlotUid = week.exerciseSlotUid ,
                         type = type ,
-                        setIndex
+                        status =  SetSlot.SetStatus.Default.ordinal,
+                       index=setIndex,
+
                     )
                 _sets.update { it + set }
                 workoutRepository.addSets(sets = arrayOf(set))
@@ -351,7 +356,7 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
                     } ,
                     index = lastIndex + 1
                 )
-                _profile?.let {
+                _appState.value?.userProfile?.let {
 
                     val oneRepMaxWeight =
                         workoutRepository.getLatestOneRepMax(exercise.uid , it.uid).getOrNull()
@@ -390,34 +395,73 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
                 return@launch
             }
 
-            //TODO if there is a session created today for that workout show that one
-            //TODO else create this one
-            //TODO in the session screen the user can delete it and go back to it
-            //TODO make the start workout button to say something like "Continue Workout" or "Resume Workout" if there is an available option
-            val latestSets = mutableListOf<SetSlot>()
-            _exerciseSlots.value.onEach {slot->
-                val latestWeek =
-                    _weeks.value.filter { it.exerciseSlotUid == slot.uid }.maxByOrNull { it.index }
-                Log.d("Test" , "Latest Week = ${latestWeek}")
-                latestWeek?.let { week ->
-                     _sets.value.filter { it.weekUid == week.uid }.sortedBy { it.type }.onEach {
-                         Log.d("Test" , it.uid.toString())
-                        latestSets.add(it)
+            val latestSession = workoutRepository.getLatestSessionUidForWorkout(_workoutUid)
+                .onFailure { it.printStackTrace() }.getOrNull()
+
+            when {
+                latestSession == null -> {
+                    //create new session
+                    Log.d("Test" , "No session found")
+
+                    val setList = mutableListOf<SetSlot>()
+                    _exerciseSlots.value.onEach { slot ->
+                        val latestWeek = _weeks.value.filter { it.exerciseSlotUid == slot.uid }
+                            .maxBy { it.index }
+                        val sets = workoutRepository.getSetsForWeek(latestWeek)
+                            .onFailure { it.printStackTrace() }.getOrNull() ?: emptyList()
+                        setList.addAll(sets)
+                    }
+                    val session = WorkoutSession(
+                        uid = System.currentTimeMillis() ,
+                        workoutUid = _workoutUid ,
+                        ownerUid = _appState.value?.userProfile?.uid ?: guestProfile.uid,
+                        slotList = WorkoutSession.buildUidString(_exerciseSlots.value.map { it.uid }),
+                        setList = WorkoutSession.buildUidString(setList.map { it.uid.toLong() }) ,
+                        cursorPosition = setList.firstOrNull()?.uid?:-1,
+                        status = WorkoutSession.Companion.SessionState.STARTED.ordinal
+                    )
+                    workoutRepository.addSession(session)
+                    withContext(Dispatchers.Main) {
+                        onCreatedSession(session.uid)
+                    }
+                }
+                (System.currentTimeMillis() - latestSession) > (24 * 3600 * 1000) -> {
+                    //session is to old
+                    Log.d("Test" , "Found inactive session")
+                    val setList = mutableListOf<SetSlot>()
+                    _exerciseSlots.value.onEach { slot ->
+                        val latestWeek = _weeks.value.filter { it.exerciseSlotUid == slot.uid }
+                            .maxBy { it.index }
+                        val sets = workoutRepository.getSetsForWeek(latestWeek)
+                            .onFailure { it.printStackTrace() }.getOrNull() ?: emptyList()
+                        setList.addAll(sets)
+                    }
+                    val session = WorkoutSession(
+                        uid = System.currentTimeMillis() ,
+                        workoutUid = _workoutUid ,
+                        ownerUid = _appState.value?.userProfile?.uid ?: guestProfile.uid,
+                        slotList = WorkoutSession.buildUidString(_exerciseSlots.value.map { it.uid }),
+                        setList = WorkoutSession.buildUidString(setList.map { it.uid.toLong() }) ,
+                        cursorPosition = setList.firstOrNull()?.uid?:-1,
+                        status = WorkoutSession.Companion.SessionState.STARTED.ordinal
+                    )
+                    workoutRepository.addSession(session)
+                    withContext(Dispatchers.Main) {
+                        onCreatedSession(session.uid)
+                    }
+                }
+                else -> {
+                    //session is still active
+                    Log.d("Test" , "Found Active Session")
+                    withContext(Dispatchers.Main) {
+                        onCreatedSession(latestSession)
                     }
                 }
             }
-            val newSession = GenerateWorkoutSession().buildSession(
-                workoutMetadata = _metadata.value ,
-                slotList = _exerciseSlots.value ,
-                setList = latestSets
-            )
-            workoutRepository.addSession(newSession)
-            withContext(Dispatchers.Main){
-                onCreatedSession(newSession.uid)
-            }
-
         }
     }
+
+
 
     private fun checkIfStartedPointsProvided() : Boolean {
         var result = true
@@ -437,7 +481,7 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
 
         val schema = getSchema(slot.category)
         Log.d("Test" , "Get Schema Uid = ${schema.uid} , type = ${type}")
-        val newSchema = if (type == SetSlot.WarmUp) schema.copy(warmUpSetRestTimeInSeconds = value)
+        val newSchema = if (type == SetSlot.SetType.WarmUp.ordinal) schema.copy(warmUpSetRestTimeInSeconds = value)
             .apply { this.uid = schema.uid }
         else schema.copy(workingSetRestTimeInSeconds = value).apply { this.uid = schema.uid }
         viewModelScope.launch(Dispatchers.IO) {

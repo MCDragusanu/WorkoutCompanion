@@ -3,6 +3,7 @@ package com.example.workoutcompanion.core.presentation.main_navigations.workout_
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.workoutcompanion.common.extentions.replace
 import com.example.workoutcompanion.core.data.di.Testing
 
 
@@ -10,14 +11,12 @@ import com.example.workoutcompanion.core.data.user_database.common.ProfileReposi
 import com.example.workoutcompanion.core.data.workout.WorkoutRepository
 import com.example.workoutcompanion.core.data.workout.exercise_slot.ExerciseSlot
 import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot
-import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot.Companion.WarmUp
-import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot.Companion.WorkingSet
 import com.example.workoutcompanion.core.data.workout.workout_session.WorkoutSession
 import com.example.workoutcompanion.core.presentation.app_state.AppStateManager
 import com.example.workoutcompanion.core.presentation.app_state.WorkoutCompanionAppState
+import com.google.common.collect.Sets
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -46,7 +45,7 @@ class WorkoutSessionViewModel @Inject constructor(private val workoutRepository 
     private val _setSlots = MutableStateFlow(emptyList<SetSlot>())
     val setSlots = _setSlots.asStateFlow()
 
-    private val setQueueBuffer : MutableList<Int> = mutableListOf<Int>()
+    private val setQueueBuffer : MutableList<Int> = mutableListOf()
 
     private val undoSetStack : Stack<Int> = Stack()
 
@@ -61,107 +60,83 @@ class WorkoutSessionViewModel @Inject constructor(private val workoutRepository 
     }
 
     fun retrieveSession(sessionUid : Long) {
-        Log.d("Bug" , "Retrieve Session called once")
         viewModelScope.launch(Dispatchers.IO) {
-            Log.d("Test" , "Received session uid = $sessionUid")
-            _sessionUid = sessionUid
-            workoutRepository.getSession(sessionUid).onFailure {
-                it.printStackTrace()
-            }.getOrNull()?.let { session ->
+            val newSession =
+                workoutRepository.getSession(sessionUid).onFailure { it.printStackTrace() }
+                    .getOrNull()
+            newSession?.let { session ->
                 _session.update { session }
-                val slotsUid = WorkoutSession.parseUids(session.slotList)
-                val setsUid = WorkoutSession.parseUids(session.setList)
-                Log.d("Test" , session.toString())
-                val retrievedSlots = async {
-                    slotsUid.map { uid ->
-                        workoutRepository.getExerciseSlotByUid(uid).onFailure {
-                            it.printStackTrace()
-                        }.getOrNull()!!
+                val slotUids = WorkoutSession.parseUids(session.slotList)
+                val setUids = WorkoutSession.parseUids(session.setList)
+
+
+                slotUids.onEach {
+                    val newSlot = workoutRepository.getExerciseSlotByUid(it).onFailure { it.printStackTrace() }.getOrNull()
+                    newSlot?.let { slot->
+                        _exerciseSlots.update { it+slot }
                     }
                 }
-                val retrievedSets = async {
-                    setsUid.map { uid ->
-                        workoutRepository.getSetByUid(uid.toInt()).onFailure {
-                            it.printStackTrace()
-                        }.onSuccess { set ->
-                            if (set.uid == session.cursorPosition) {
-                                _currentSet.update { set }
-                                Log.d("Test" , "cursor has changed")
-                            }
-                        }.getOrNull()!!
+
+                setUids.onEach {
+                    val newSet =
+                        workoutRepository.getSetByUid(it.toInt()).onFailure { it.printStackTrace() }
+                            .getOrNull()
+                    newSet?.let { set ->
+                        _setSlots.update { it + set }
+                        if (set.uid == session.cursorPosition) {
+                            _currentSet.update { set }
+                        } else if (SetSlot.SetStatus.values()[set.status].isDefault()) {
+                            setQueueBuffer.add(set.uid)
+                        } else undoSetStack.add(set.uid)
                     }
                 }
-                retrievedSlots.await().onEach { slot ->
-                    val sets =
-                        retrievedSets.await().filter { set -> set.exerciseSlotUid == slot.uid }
-                    val warmUps = sets.filter { it.type == WarmUp }.sortedBy { it.index }
-                    val workingSets = sets.filter { it.type == WorkingSet }.sortedBy { it.index }
-
-                    setQueueBuffer.addAll((warmUps + workingSets).sortedBy { it.index }
-                        .map { it.uid })
-
-                    _exerciseSlots.update { it + slot }
-                    _setSlots.update { it + warmUps + workingSets }
-                }
-
-                initCursor(session)
-
-                Log.d(
-                    "Test" ,
-                    "Queue = ${setQueueBuffer} , Stack = ${undoSetStack}, cursor = ${session.cursorPosition}"
-                )
             }
         }
     }
 
-    fun initCursor(session : WorkoutSession) {
 
-        var first = setQueueBuffer.removeFirstOrNull()
 
-        first?.let {
-            undoSetStack.push(it)
-            while (first != null && first != session.cursorPosition) {
-                undoSetStack.push(first)
-                first = setQueueBuffer.removeFirstOrNull()
-            }
-            Log.d(
-                "Test" ,
-                "Queue =$setQueueBuffer , Stack = $undoSetStack , cursor = ${session.cursorPosition}"
-            )
-        }
-    }
 
     fun onNextItem() {
 
         Log.d("Test" , "Current Undo Stack = $undoSetStack Current Queue = $setQueueBuffer")
 
-        val currentSetUid = setQueueBuffer.removeFirstOrNull()
+        val currentEntry = setQueueBuffer.removeFirstOrNull()
 
-        if (currentSetUid == null) {
+        if (currentEntry == null) {
             Log.d("Test" , "Queue is Empty")
             return
         }
-        undoSetStack.push(currentSetUid)
+        undoSetStack.push(currentEntry)
 
-        val currentSet = _setSlots.value.firstOrNull { it.uid == currentSetUid }
+        val currentSetState = _setSlots.value.firstOrNull { it.uid == currentEntry }
 
-        if (currentSet == null) {
-            Log.d("Test" , "Set with uid = $currentSetUid not found")
+        if (currentSetState == null) {
+            Log.d("Test" , "Set with uid = $currentEntry not found")
             return
         }
 
 
-        _currentSet.update { currentSet }
+        _currentSet.update { currentSetState }
 
         viewModelScope.launch(Dispatchers.IO) {
             _session.value?.let {
-              //  Log.d("Test" , "Update block called")
-                workoutRepository.updateSession(it.copy(cursorPosition = currentSet.uid))
+                //  Log.d("Test" , "Update block called")
+                workoutRepository.updateSession(it.copy(cursorPosition = currentSetState.uid))
                     .onFailure {
                         it.printStackTrace()
                     }.onSuccess {
                         Log.d("Test" , "Cursor = ${_currentSet.value!!.uid}")
                     }
+                workoutRepository.updateSet(currentSetState.copy(status = SetSlot.SetStatus.Completed.ordinal).apply { this.uid = currentSetState.uid })
+
+
+
+                _setSlots.update {
+                    it.replace(currentSetState.copy(status = SetSlot.SetStatus.Completed.ordinal)) {
+                        it.uid == currentSetState.uid
+                    }
+                }
             }
         }
     }
@@ -177,22 +152,23 @@ class WorkoutSessionViewModel @Inject constructor(private val workoutRepository 
         if (undoSetStack.isNotEmpty()) {
 
             Log.d("Test" , "Current Undo Stack = $undoSetStack Current Queue = $setQueueBuffer")
-            val currentSetUid = undoSetStack.pop()
+            val currentSetEntry = undoSetStack.pop()
 
-            if (currentSetUid == null) {
+            if (currentSetEntry == null) {
                 Log.d("Test" , "Stack is Empty")
                 return
             }
 
-            setQueueBuffer.add(0 , currentSetUid)
+            setQueueBuffer.add(0 , currentSetEntry)
 
 
             Log.d("Queue" , " Stack = ${undoSetStack}, New Queue = $setQueueBuffer")
 
-            val currentSet = _setSlots.value.firstOrNull { it.uid == currentSetUid }
+            val currentSet =
+                _setSlots.value.firstOrNull { it.uid == currentSetEntry }
 
             if (currentSet == null) {
-                Log.d("Test" , "Set with uid = $currentSetUid not found")
+                Log.d("Test" , "Set with uid = $currentSetEntry not found")
                 return
             }
 
@@ -204,8 +180,15 @@ class WorkoutSessionViewModel @Inject constructor(private val workoutRepository 
                         .onFailure {
                             it.printStackTrace()
                         }.onSuccess {
-                           Log.d("Test" , "Cursor = ${_currentSet.value!!.uid}")
+                            Log.d("Test" , "Cursor = ${_currentSet.value!!.uid}")
                         }
+                    workoutRepository.updateSet(currentSet.copy(status = SetSlot.SetStatus.Default.ordinal).apply { this.uid = currentSet.uid })
+
+                    _setSlots.update {
+                        it.replace(currentSet.copy(status = SetSlot.SetStatus.Completed.ordinal)) {
+                            it.uid == currentSet.uid
+                        }
+                    }
                 }
             }
         }

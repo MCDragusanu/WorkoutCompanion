@@ -34,16 +34,21 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
                              private val progressionSchemaDao : ProgressionSchemaDao,
                              private val trainingParametersDao : TrainingParametersDao,
                              ):WorkoutRepository {
-    override suspend fun getLatestOneRepMax(uid : Int , userUid : String) :Result<OneRepMax?> {
+    override suspend fun getLatestOneRepMax(uid : Int , userUid : String) : Result<OneRepMax?> {
         return try {
             Result.success(oneRepMaxDao.getLatestRecord(uid , userUid))
         } catch (e : Exception) {
             e.printStackTrace()
-            Result.failure(WorkoutRepositoryException(requestName = "Retrieve Latest Record" ,reason = e.localizedMessage?:"Unknown Error"))
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Retrieve Latest Record" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
         }
     }
 
-    override suspend fun addWorkoutMetadata(workoutMetadata : WorkoutMetadata):Result<Nothing?> {
+    override suspend fun addWorkoutMetadata(workoutMetadata : WorkoutMetadata) : Result<Nothing?> {
         return try {
             workoutMetadataDao.addNewWorkout(workoutMetadata)
             Result.success(null)
@@ -58,7 +63,7 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
         }
     }
 
-    override suspend fun addExerciseSlot(slot : ExerciseSlot):Result<Nothing?> {
+    override suspend fun addExerciseSlot(slot : ExerciseSlot) : Result<Nothing?> {
         return try {
             exerciseSlotDao.addExerciseSlot(slot)
             Result.success(null)
@@ -73,7 +78,7 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
         }
     }
 
-    override suspend fun addWeek(week : Week):Result<Nothing?> {
+    override suspend fun addWeek(week : Week) : Result<Nothing?> {
         return try {
             weekDao.addWeek(week = week)
             Result.success(null)
@@ -88,19 +93,22 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
         }
     }
 
-    override suspend fun addSets(vararg sets : SetSlot):Result<Nothing?> {
-        var error :Exception? = null
+    override suspend fun addSets(vararg sets : SetSlot) : Result<Nothing?> {
+        var error : Exception? = null
         CoroutineScope(Dispatchers.IO).launch {
-           try {
+            try {
                 sets.onEach {
                     async { setSlotDao.addSet(it) }
                 }
             } catch (e : Exception) {
                 e.printStackTrace()
-               error = WorkoutRepositoryException(requestName = "Add Sets" ,reason = e.localizedMessage?:"Unknown Error")
+                error = WorkoutRepositoryException(
+                    requestName = "Add Sets" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
             }
         }
-        return if(error!=null) Result.failure(error!!)
+        return if (error != null) Result.failure(error!!)
         else Result.success(null)
     }
 
@@ -109,7 +117,12 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
             Result.success(workoutMetadataDao.getWorkoutsOfUser(uid))
         } catch (e : Exception) {
             e.printStackTrace()
-            Result.failure(WorkoutRepositoryException(requestName = "Get Workout" ,reason = e.localizedMessage?:"Unknown Error"))
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Get Workout" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
         }
     }
 
@@ -118,7 +131,12 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
             Result.success(exerciseSlotDao.getSlotsForWorkout(uid))
         } catch (e : Exception) {
             e.printStackTrace()
-            Result.failure(WorkoutRepositoryException(requestName = "Retrieve Exercises" ,reason = e.localizedMessage?:"Unknown Error"))
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Retrieve Exercises" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
         }
     }
 
@@ -128,7 +146,12 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
         } catch (e : Exception) {
             e.printStackTrace()
 
-            Result.failure(WorkoutRepositoryException(requestName = "Retrieve Records" ,reason = e.localizedMessage?:"Unknown Error"))
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Retrieve Records" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
         }
     }
 
@@ -138,33 +161,48 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
         } catch (e : Exception) {
             e.printStackTrace()
             e.printStackTrace()
-            Result.failure(WorkoutRepositoryException(requestName = "Retrieve Sets" ,reason = e.localizedMessage?:"Unknown Error"))
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Retrieve Sets" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
         }
     }
 
-    override suspend fun addOneRepMax(oneRepMax : OneRepMax):Result<Nothing?> {
-       return try {
+    override suspend fun addOneRepMax(oneRepMax : OneRepMax) : Result<Nothing?> {
+        return try {
             oneRepMaxDao.addOneRepMax(oneRepMax)
             Result.success(null)
-        }catch (e:Exception){
+        } catch (e : Exception) {
             e.printStackTrace()
             e.printStackTrace()
-            Result.failure(WorkoutRepositoryException(requestName = "Add Record" ,reason = e.localizedMessage?:"Unknown Error"))
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Add Record" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
         }
     }
 
-    override suspend fun updateWeek(newWeek : Week):Result<Nothing?> {
+    override suspend fun updateWeek(newWeek : Week) : Result<Nothing?> {
         return try {
             weekDao.udpateWeek(newWeek)
             Result.success(null)
-        }catch (e:Exception){
+        } catch (e : Exception) {
             e.printStackTrace()
 
-            Result.failure(WorkoutRepositoryException(requestName = "Update Progression" ,reason = e.localizedMessage?:"Unknown Error"))
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Update Progression" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
         }
     }
 
-    override suspend fun updateSet(newSet : SetSlot):Result<Nothing?> {
+    override suspend fun updateSet(newSet : SetSlot) : Result<Nothing?> {
         return try {
             setSlotDao.updateSetSlot(
                 newSet.weightInKgs ,
@@ -185,19 +223,24 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
         }
     }
 
-    override suspend fun removeProgression(week : Week):Result<Nothing?> {
+    override suspend fun removeProgression(week : Week) : Result<Nothing?> {
         return try {
             weekDao.deleteWeek(week)
             Result.success(null)
-        }catch (e:Exception){
+        } catch (e : Exception) {
             e.printStackTrace()
             e.printStackTrace()
-            Result.failure(WorkoutRepositoryException(requestName = "Delete Progression" ,reason = e.localizedMessage?:"Unknown Error"))
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Delete Progression" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
         }
 
     }
 
-    override suspend fun getWorkoutByUid(_workoutUid : Long) :Result<WorkoutMetadata?> {
+    override suspend fun getWorkoutByUid(_workoutUid : Long) : Result<WorkoutMetadata?> {
 
         return try {
 
@@ -214,24 +257,26 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
         }
     }
 
-    override suspend fun deleteExerciseSlot(slot : ExerciseSlot):Result<Nothing?> {
-        return try{
+    override suspend fun deleteExerciseSlot(slot : ExerciseSlot) : Result<Nothing?> {
+        return try {
             weekDao.getWeeksForSlotInASCOrder(slot.uid).onEach {
                 setSlotDao.deleteAllSetsForWeek(it.uid)
                 weekDao.deleteWeek(it)
             }
             exerciseSlotDao.deleteSlot(slot)
             Result.success(null)
-        }catch (e:Exception){
+        } catch (e : Exception) {
             e.printStackTrace()
-            Result.failure(WorkoutRepositoryException(
-                requestName = "Delete Exercise" ,
-                reason = e.localizedMessage ?: "Unknown Error"
-            ))
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Delete Exercise" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
         }
     }
 
-    override suspend fun updateMetadata(value : WorkoutMetadata):Result<Nothing?> {
+    override suspend fun updateMetadata(value : WorkoutMetadata) : Result<Nothing?> {
 
         return try {
             workoutMetadataDao.updateWorkout(value)
@@ -248,7 +293,7 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
         }
     }
 
-    override suspend fun removeSet(set : SetSlot):Result<Nothing?> {
+    override suspend fun removeSet(set : SetSlot) : Result<Nothing?> {
 
         return try {
             setSlotDao.deleteSet(set)
@@ -266,13 +311,13 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
     }
 
     override suspend fun getTrainingParameters(userUid : String) : Result<TrainingParameters?> {
-        return try{
+        return try {
             RetrieveTrainingParameters().exercute(
                 userUid ,
                 trainingParametersDao ,
                 progressionSchemaDao
             )
-        }catch (e:Exception){
+        } catch (e : Exception) {
             e.printStackTrace()
             Result.failure(
                 WorkoutRepositoryException(
@@ -283,7 +328,7 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
         }
     }
 
-    override suspend fun createInitialParameters(uid : String):Result<TrainingParameters> {
+    override suspend fun createInitialParameters(uid : String) : Result<TrainingParameters> {
         return try {
             val metadataUid = System.currentTimeMillis()
             val metadatada = TrainingParametersMetadata(
@@ -297,12 +342,12 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
                 repUpperBound = ExerciseProgressionSchema.primaryCompoundSchema.repRange.last ,
                 metadataUid = metadataUid ,
                 appliedTo = 0 ,
-                difficultyCoeff = ExerciseProgressionSchema.primaryCompoundSchema.difficultyCoeff,
-                workingSetRestTimeInSeconds = ExerciseProgressionSchema.primaryCompoundSchema.workingSetRestTimeInSeconds,
-                warmUpSetRestTimeInSeconds = ExerciseProgressionSchema.primaryCompoundSchema.warmUpSetRestTimeInSeconds,
-                warmUpSetCount = ExerciseProgressionSchema.primaryCompoundSchema.warmUpSetCount,
-                warmUpRepCount = ExerciseProgressionSchema.primaryCompoundSchema.warmUpRepCount,
-                startingWeightPercent = ExerciseProgressionSchema.primaryCompoundSchema.startingWeightPercent,
+                difficultyCoeff = ExerciseProgressionSchema.primaryCompoundSchema.difficultyCoeff ,
+                workingSetRestTimeInSeconds = ExerciseProgressionSchema.primaryCompoundSchema.workingSetRestTimeInSeconds ,
+                warmUpSetRestTimeInSeconds = ExerciseProgressionSchema.primaryCompoundSchema.warmUpSetRestTimeInSeconds ,
+                warmUpSetCount = ExerciseProgressionSchema.primaryCompoundSchema.warmUpSetCount ,
+                warmUpRepCount = ExerciseProgressionSchema.primaryCompoundSchema.warmUpRepCount ,
+                startingWeightPercent = ExerciseProgressionSchema.primaryCompoundSchema.startingWeightPercent ,
                 weightIncrementPercent = ExerciseProgressionSchema.NORMAL_GROWTH_COEFF ,
                 repIncreaseRate = ExerciseProgressionSchema.primaryCompoundSchema.repIncreaseRate ,
                 smallestWeightIncrementAvailable = ExerciseProgressionSchema.primaryCompoundSchema.smallestWeightIncrementAvailable
@@ -312,12 +357,12 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
                 repUpperBound = ExerciseProgressionSchema.secondaryCompoundSchema.repRange.last ,
                 metadataUid = metadataUid ,
                 appliedTo = 1 ,
-                difficultyCoeff = ExerciseProgressionSchema.secondaryCompoundSchema.difficultyCoeff,
-                workingSetRestTimeInSeconds = ExerciseProgressionSchema.secondaryCompoundSchema.workingSetRestTimeInSeconds,
-                warmUpSetRestTimeInSeconds = ExerciseProgressionSchema.secondaryCompoundSchema.warmUpSetRestTimeInSeconds,
-                warmUpRepCount = ExerciseProgressionSchema.secondaryCompoundSchema.warmUpRepCount,
-                warmUpSetCount = ExerciseProgressionSchema.secondaryCompoundSchema.warmUpSetCount,
-                startingWeightPercent = ExerciseProgressionSchema.secondaryCompoundSchema.startingWeightPercent,
+                difficultyCoeff = ExerciseProgressionSchema.secondaryCompoundSchema.difficultyCoeff ,
+                workingSetRestTimeInSeconds = ExerciseProgressionSchema.secondaryCompoundSchema.workingSetRestTimeInSeconds ,
+                warmUpSetRestTimeInSeconds = ExerciseProgressionSchema.secondaryCompoundSchema.warmUpSetRestTimeInSeconds ,
+                warmUpRepCount = ExerciseProgressionSchema.secondaryCompoundSchema.warmUpRepCount ,
+                warmUpSetCount = ExerciseProgressionSchema.secondaryCompoundSchema.warmUpSetCount ,
+                startingWeightPercent = ExerciseProgressionSchema.secondaryCompoundSchema.startingWeightPercent ,
                 weightIncrementPercent = ExerciseProgressionSchema.NORMAL_GROWTH_COEFF ,
                 repIncreaseRate = ExerciseProgressionSchema.secondaryCompoundSchema.repIncreaseRate ,
                 smallestWeightIncrementAvailable = ExerciseProgressionSchema.secondaryCompoundSchema.smallestWeightIncrementAvailable
@@ -327,12 +372,12 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
                 repUpperBound = ExerciseProgressionSchema.isolationSchema.repRange.last ,
                 metadataUid = metadataUid ,
                 appliedTo = 2 ,
-                warmUpSetCount = ExerciseProgressionSchema.isolationSchema.warmUpSetCount,
-                warmUpRepCount = ExerciseProgressionSchema.isolationSchema.warmUpRepCount,
-                workingSetRestTimeInSeconds = ExerciseProgressionSchema.isolationSchema.workingSetRestTimeInSeconds,
-                warmUpSetRestTimeInSeconds = ExerciseProgressionSchema.isolationSchema.warmUpSetRestTimeInSeconds,
-                difficultyCoeff = ExerciseProgressionSchema.isolationSchema.difficultyCoeff,
-                startingWeightPercent = ExerciseProgressionSchema.isolationSchema.startingWeightPercent,
+                warmUpSetCount = ExerciseProgressionSchema.isolationSchema.warmUpSetCount ,
+                warmUpRepCount = ExerciseProgressionSchema.isolationSchema.warmUpRepCount ,
+                workingSetRestTimeInSeconds = ExerciseProgressionSchema.isolationSchema.workingSetRestTimeInSeconds ,
+                warmUpSetRestTimeInSeconds = ExerciseProgressionSchema.isolationSchema.warmUpSetRestTimeInSeconds ,
+                difficultyCoeff = ExerciseProgressionSchema.isolationSchema.difficultyCoeff ,
+                startingWeightPercent = ExerciseProgressionSchema.isolationSchema.startingWeightPercent ,
                 weightIncrementPercent = ExerciseProgressionSchema.NORMAL_GROWTH_COEFF ,
                 repIncreaseRate = ExerciseProgressionSchema.isolationSchema.repIncreaseRate ,
                 smallestWeightIncrementAvailable = ExerciseProgressionSchema.isolationSchema.smallestWeightIncrementAvailable
@@ -365,9 +410,9 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
     override suspend fun updateSchema(
         schema : ExerciseProgressionSchema ,
         parametersMetadata : Long
-    ):Result<Nothing?> {
+    ) : Result<Nothing?> {
 
-        return try{
+        return try {
             Log.d("Test" , "Schema will be updated ${schema.uid}")
             progressionSchemaDao.updateSchema(
                 ProgressionSchema(
@@ -376,13 +421,13 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
                     metadataUid = parametersMetadata ,
                     appliedTo = schema.appliedTo.ordinal ,
                     repIncreaseRate = schema.repIncreaseRate ,
-                    workingSetRestTimeInSeconds = schema.workingSetRestTimeInSeconds,
-                    warmUpSetRestTimeInSeconds = schema.warmUpSetRestTimeInSeconds,
+                    workingSetRestTimeInSeconds = schema.workingSetRestTimeInSeconds ,
+                    warmUpSetRestTimeInSeconds = schema.warmUpSetRestTimeInSeconds ,
                     weightIncrementPercent = schema.weightIncrementCoeff ,
-                    warmUpSetCount =schema.warmUpSetCount,
-                    startingWeightPercent = schema.startingWeightPercent,
-                    warmUpRepCount = schema.warmUpRepCount,
-                    difficultyCoeff = schema.difficultyCoeff,
+                    warmUpSetCount = schema.warmUpSetCount ,
+                    startingWeightPercent = schema.startingWeightPercent ,
+                    warmUpRepCount = schema.warmUpRepCount ,
+                    difficultyCoeff = schema.difficultyCoeff ,
                     smallestWeightIncrementAvailable = schema.smallestWeightIncrementAvailable
                 ).apply { uid = schema.uid }
             )
@@ -398,19 +443,21 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
         }
     }
 
-    override suspend fun getLatestWeek(uid : Long) : Result<Week> {
-       return try{ Result.success(weekDao.getWeeksForSlotInASCOrder(uid).last()) }catch (e:Exception){
-           e.printStackTrace()
-           Result.failure(
-               WorkoutRepositoryException(
-                   requestName = "Get Latest Progression" ,
-                   reason = e.localizedMessage ?: "Unknown Error"
-               )
-           )
-       }
+    override suspend fun getLatestWeek(exerciseSlot : Long) : Result<Week> {
+        return try {
+            Result.success(weekDao.getWeeksForSlotInASCOrder(exerciseSlot).last())
+        } catch (e : Exception) {
+            e.printStackTrace()
+            Result.failure(
+                WorkoutRepositoryException(
+                    requestName = "Get Latest Progression" ,
+                    reason = e.localizedMessage ?: "Unknown Error"
+                )
+            )
+        }
     }
 
-    override suspend fun addSession(session : WorkoutSession):Result<Nothing?> {
+    override suspend fun addSession(session : WorkoutSession) : Result<Nothing?> {
         return try {
             workoutSessionDao.addSession(session)
             Result.success(null)
@@ -426,9 +473,9 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
     }
 
     override suspend fun getSession(sessionUid : Long) : Result<WorkoutSession?> {
-       return try {
-           Result.success( workoutSessionDao.getSessionByUid(sessionUid))
-        }catch (e:Exception){
+        return try {
+            Result.success(workoutSessionDao.getSessionByUid(sessionUid))
+        } catch (e : Exception) {
             Result.failure(e)
         }
     }
@@ -436,7 +483,7 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
     override suspend fun getExerciseSlotByUid(uid : Long) : Result<ExerciseSlot> {
         return try {
             Result.success(exerciseSlotDao.getSlotById(uid))
-        }catch (e:Exception){
+        } catch (e : Exception) {
             Result.failure(e)
         }
     }
@@ -444,7 +491,7 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
     override suspend fun getSetByUid(uid : Int) : Result<SetSlot> {
         return try {
             Result.success(setSlotDao.getSetByUid(uid))
-        }catch (e:Exception){
+        } catch (e : Exception) {
             Result.failure(e)
         }
     }
@@ -454,9 +501,19 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
             workoutSessionDao.updateSession(session = session)
 
             Result.success(null)
+        } catch (e : Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getLatestSessionUidForWorkout(_workoutUid : Long) : Result<Long?> {
+        return try {
+            Result.success(workoutSessionDao.getLatestSession(_workoutUid))
         }catch (e:Exception){
             e.printStackTrace()
             Result.failure(e)
         }
     }
 }
+
