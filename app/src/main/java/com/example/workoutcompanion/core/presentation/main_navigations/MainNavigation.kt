@@ -1,5 +1,6 @@
 package com.example.workoutcompanion.core.presentation.main_navigations
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.layout.*
@@ -9,15 +10,13 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.WorkHistory
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -58,6 +57,7 @@ object MainNavigation {
         val navController = rememberNavController()
         val navBarIsVisible = MutableStateFlow(true)
         val scope = rememberCoroutineScope()
+
 
 
         val databaseScreenViewModel = hiltViewModel<DatabaseScreenViewModel>().apply {
@@ -207,9 +207,13 @@ object MainNavigation {
                 val workoutUid = it.arguments?.getLong("workoutUid") ?: -1
                 val userUid = it.arguments?.getString("userUid") ?: guestProfile.uid
 
-                val workoutEditorViewModel = hiltViewModel<WorkoutEditorViewModel>().apply {
-                    this.retrieveAppState(appState)
-                    this.retrieveWorkout(workoutUid)
+
+                val workoutEditorViewModel = hiltViewModel<WorkoutEditorViewModel>()
+                LaunchedEffect(key1 = LocalContext.current) {
+                    workoutEditorViewModel.apply {
+                        this.retrieveAppState(appState)
+                        this.retrieveWorkout(workoutUid)
+                    }
                 }
                 WorkoutEditorScreen(viewModel = workoutEditorViewModel , onBackIsPressed = {
                     displayNavBar()
@@ -227,13 +231,15 @@ object MainNavigation {
                     type = NavType.LongType
                 })
             ) {
+                Log.d("Bug" , "Composable block called once")
                 val sessionUid = it.arguments?.getLong("sessionUid") ?: -1
                 val userUid = it.arguments?.getString("userUid") ?: guestProfile.uid
-                val viewModel = hiltViewModel<WorkoutSessionViewModel>().apply {
-                    this.retrieveProfile(userUid)
-                    this.retrieveSession(sessionUid)
-                }
-                WorkoutSessionScreen.invoke(viewModel = viewModel)
+                val viewModel = hiltViewModel<WorkoutSessionViewModel>()
+                WorkoutSessionScreen.invoke(
+                    viewModel = viewModel ,
+                    sessionUid = sessionUid ,
+                    userUid = userUid
+                )
             }
         }
     }

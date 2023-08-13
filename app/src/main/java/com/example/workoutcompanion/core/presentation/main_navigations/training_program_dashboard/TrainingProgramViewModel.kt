@@ -4,22 +4,14 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.workoutcompanion.common.extentions.replace
-import com.example.workoutcompanion.core.data.di.Production
 
-import com.example.workoutcompanion.core.data.di.Testing
-import com.example.workoutcompanion.core.data.user_database.common.ProfileRepository
-import com.example.workoutcompanion.core.data.user_database.common.UserProfile
 import com.example.workoutcompanion.core.data.user_database.common.guestProfile
 import com.example.workoutcompanion.core.data.workout.WorkoutRepository
-import com.example.workoutcompanion.core.data.workout.WorkoutRepositoryException
 import com.example.workoutcompanion.core.data.workout.exercise_slot.ExerciseSlot
-import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot
 import com.example.workoutcompanion.core.data.workout.week.Week
 import com.example.workoutcompanion.core.data.workout.workout.WorkoutMetadata
 import com.example.workoutcompanion.core.domain.model.exercise.Exercise
 import com.example.workoutcompanion.core.domain.model.progression_overload.ExerciseProgressionSchema
-import com.example.workoutcompanion.core.domain.use_cases.GenerateSets
-import com.example.workoutcompanion.core.presentation.app_state.AppStateManager
 import com.example.workoutcompanion.core.presentation.app_state.WorkoutCompanionAppState
 import com.example.workoutcompanion.workout_designer.progression_overload.ProgressionOverloadManager
 import com.example.workoutcompanion.workout_designer.progression_overload.TrainingParameters
@@ -63,7 +55,7 @@ class TrainingProgramViewModel @Inject constructor(
         }
     }
     fun setAppState(initial:WorkoutCompanionAppState?) {
-
+        Log.d("Bug" , "Set App State from Training program Screen Called once")
         _appState.update { initial }
         _appState.value?.let { appState ->
             viewModelScope.launch(Dispatchers.IO) {
@@ -148,7 +140,7 @@ class TrainingProgramViewModel @Inject constructor(
 
 
                     // Generate sets for the starting point
-                    val setList =GenerateSets().execute(startingPoint ,getSchema(slot.category))
+                    val setList = progressionManager.generateSets(startingPoint ,getSchema(slot.category))
 
                     // Add the sets to the workout repository
                     workoutRepository.addSets(*setList.toTypedArray()).onFailure { handleError(it) }

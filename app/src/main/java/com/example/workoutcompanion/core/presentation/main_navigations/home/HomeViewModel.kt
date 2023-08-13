@@ -29,6 +29,7 @@ class HomeViewModel @Inject constructor(@Testing private val repository : Profil
     private val _appState = MutableStateFlow<WorkoutCompanionAppState?>(null)
     val appState = _appState.asStateFlow()
     fun setAppState(initial:WorkoutCompanionAppState?){
+        Log.d("Bug" , "Set App State from Home Screen Called once")
         _appState.update {initial}
     }
 

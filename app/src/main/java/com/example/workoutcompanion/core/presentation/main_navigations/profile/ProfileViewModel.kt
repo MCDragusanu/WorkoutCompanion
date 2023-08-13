@@ -27,6 +27,7 @@ class ProfileViewModel @Inject constructor(@Testing() private val userRepository
     val appState = _appState.asStateFlow()
 
     fun setAppState(initial : WorkoutCompanionAppState?){
+        Log.d("Bug" , "Set App State from Profile Screen Called once")
             _appState.update { initial }
     }
 

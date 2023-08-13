@@ -68,6 +68,7 @@ class DatabaseScreenViewModel @Inject constructor (
     private val _appState = MutableStateFlow<WorkoutCompanionAppState?>(null)
     val appState = _appState.asStateFlow()
     fun setAppState(state:WorkoutCompanionAppState?){
+        Log.d("Bug" , "Set App State from DB Screen Called once")
         _appState.update {  state}
     }
 

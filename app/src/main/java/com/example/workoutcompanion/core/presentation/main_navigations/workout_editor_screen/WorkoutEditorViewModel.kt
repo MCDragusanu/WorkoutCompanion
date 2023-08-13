@@ -5,7 +5,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.workoutcompanion.common.extentions.replace
-import com.example.workoutcompanion.core.data.di.Production
 
 import com.example.workoutcompanion.core.data.di.Testing
 import com.example.workoutcompanion.core.data.exercise_database.common.ExerciseRepository
@@ -19,13 +18,10 @@ import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot
 import com.example.workoutcompanion.core.data.workout.week.Week
 import com.example.workoutcompanion.core.data.workout.workout.WorkoutMetadata
 import com.example.workoutcompanion.core.domain.model.exercise.Exercise
-import com.example.workoutcompanion.core.domain.use_cases.GenerateSets
 import com.example.workoutcompanion.core.domain.model.progression_overload.ExerciseProgressionSchema
 import com.example.workoutcompanion.core.domain.use_cases.GenerateWorkoutSession
-import com.example.workoutcompanion.core.presentation.app_state.AppStateManager
 import com.example.workoutcompanion.core.presentation.app_state.WorkoutCompanionAppState
 import com.example.workoutcompanion.workout_designer.progression_overload.ProgressionOverloadManager
-import com.example.workoutcompanion.workout_designer.progression_overload.TrainingParameters
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
@@ -105,6 +101,7 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
 
     fun retrieveWorkout(workoutUid : Long) {
         _workoutUid = workoutUid
+        Log.d("Bug" ,"retrieve Workout called once" )
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val metadata = workoutRepository.getWorkoutByUid(_workoutUid)
@@ -160,7 +157,7 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
                     progressionManager.generateSolution(previousWeek , getSchema(slot.category))
                         .copy(uid = System.currentTimeMillis() , exerciseSlotUid = slot.uid)
 
-                val newSets = GenerateSets().execute(newWeek , getSchema(slot.category))
+                val newSets = progressionManager.generateSets(newWeek , getSchema(slot.category))
 
                 workoutRepository.addWeek(newWeek)
                 workoutRepository.addSets(*newSets.toTypedArray())
@@ -205,7 +202,7 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
                     schema = getSchema(slot.category)
                 )
 
-                val sets = GenerateSets().execute(startingPoint , getSchema(slot.category))
+                val sets =progressionManager.generateSets(startingPoint , getSchema(slot.category))
 
                 workoutRepository.addOneRepMax(
                     OneRepMax(
@@ -368,7 +365,7 @@ class WorkoutEditorViewModel @Inject constructor(private val progressionManager:
                             schema = getSchema(slot.category)
                         )
 
-                        val sets = GenerateSets().execute(startingPoint , getSchema(slot.category))
+                        val sets = progressionManager.generateSets(startingPoint , getSchema(slot.category))
 
                         workoutRepository.addSets(*sets.toTypedArray())
                         workoutRepository.addWeek(startingPoint)

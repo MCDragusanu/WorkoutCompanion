@@ -452,7 +452,7 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
     override suspend fun updateSession(session : WorkoutSession) : Result<Nothing?> {
         return try {
             workoutSessionDao.updateSession(session = session)
-            Log.d("Test" , "Session uid = ${session.uid}")
+
             Result.success(null)
         }catch (e:Exception){
             e.printStackTrace()

@@ -26,7 +26,7 @@ class GenerateWorkoutSession {
             ownerUid = ownerUid ,
             status = status ,
             slotList = slots ,
-            cursorPosition = 0 ,
+            cursorPosition = setList.firstOrNull()?.uid?:0 ,
             setList = sets
         )
     }

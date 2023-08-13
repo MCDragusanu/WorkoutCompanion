@@ -1,5 +1,6 @@
 package com.example.workoutcompanion.workout_designer.progression_overload
 
+import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot
 import com.example.workoutcompanion.core.domain.model.progression_overload.ExerciseProgressionSchema
 import com.example.workoutcompanion.core.data.workout.week.Week
 import kotlin.math.*
@@ -64,7 +65,7 @@ class ProgressionOverloadManager {
     }
 
     //the inverse function to calculate the rep
-    fun percentToRep(percent : Float) : Int {
+    fun percentToRep(percent : Double) : Int {
         return (12.07655 * (log2(65.3282) - log2(percent - 39.10146))).toInt()
     }
 
@@ -102,5 +103,36 @@ class ProgressionOverloadManager {
             ) ,
             schema
         )
+    }
+    fun generateSets(week : Week , schema : ExerciseProgressionSchema):List<SetSlot>{
+        val result = mutableListOf<SetSlot>()
+        val startingPercent = schema.startingWeightPercent
+        val dW = (100.0 - startingPercent)/schema.warmUpSetCount
+        repeat(schema.warmUpSetCount) {
+            val set = SetSlot(
+                weightInKgs = roundToMultiple(
+                    schema.smallestWeightIncrementAvailable ,
+                    week.weightInKgs * (startingPercent*0.01 + it * dW*0.01)
+                ) ,
+                reps = percentToRep(startingPercent*0.01 + it * dW*0.01) ,
+                exerciseSlotUid = week.exerciseSlotUid,
+                weekUid = week.uid ,
+                type = SetSlot.WarmUp ,
+                index = it
+            )
+            result += set
+        }
+        repeat(week.sets){
+            val set = SetSlot(
+                weightInKgs = week.weightInKgs ,
+                exerciseSlotUid = week.exerciseSlotUid,
+                reps = week.reps ,
+                weekUid = week.uid ,
+                type = SetSlot.WorkingSet,
+                index = schema.warmUpSetCount+it
+            )
+            result+=set
+        }
+        return result
     }
 }

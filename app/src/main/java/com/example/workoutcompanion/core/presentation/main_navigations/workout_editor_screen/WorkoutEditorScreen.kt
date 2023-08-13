@@ -515,6 +515,7 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                     Card(
                         modifier = Modifier
                             .clickable {
+                                Log.d("Bug" , "On Click Called Once")
                                 onStartWorkout()
                             }
                             .height(100.dp) ,
@@ -994,7 +995,7 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
 
     ) {
 
-        //TODO if !isBodyWeight display the buttons underneath
+
 
         var isInEditMode by remember { mutableStateOf(false) }
         var currentReps by remember { mutableStateOf(setSlot.reps.toString()) }
@@ -1127,7 +1128,7 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
 
     ) {
         val lastWeek = weeks.lastOrNull { it.index == currentWeek?.index ?: -1 }
-        //TODO add a piramid warmup feature, in the exercise progression schema add some parameters that describe the grouth of the warmup
+
         LazyRow(
             modifier = modifier ,
             horizontalArrangement = Arrangement.spacedBy(8.dp) ,
