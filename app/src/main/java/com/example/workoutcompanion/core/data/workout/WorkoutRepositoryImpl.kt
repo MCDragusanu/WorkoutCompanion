@@ -203,13 +203,9 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
     }
 
     override suspend fun updateSet(newSet : SetSlot) : Result<Nothing?> {
+        Log.d("Test" , "Received set in repo = ${newSet.uid}")
         return try {
-            setSlotDao.updateSetSlot(
-                newSet.weightInKgs ,
-                newSet.reps ,
-                newSet.index ,
-                uid = newSet.uid
-            )
+           setSlotDao.updateSet(newSet)
 
             Result.success(null)
         } catch (e : Exception) {

@@ -115,7 +115,7 @@ class ProgressionOverloadManager {
                     schema.smallestWeightIncrementAvailable ,
                     week.weightInKgs * (startingPercent*0.01 + it * dW*0.01)
                 ) ,
-                reps = (percentToRep(startingPercent + it * dW) * 100).toInt(),
+                reps = (percentToRep(startingPercent + it * dW)).toInt(),
                 exerciseSlotUid = week.exerciseSlotUid,
                 weekUid = week.uid ,
                 type = SetSlot.SetType.WarmUp.ordinal ,

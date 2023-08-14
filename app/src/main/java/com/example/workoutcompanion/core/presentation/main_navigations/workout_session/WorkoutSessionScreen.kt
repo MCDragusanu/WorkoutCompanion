@@ -2,6 +2,8 @@ package com.example.workoutcompanion.core.presentation.main_navigations.workout_
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,7 +17,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.compose.getPalette
 import com.example.workoutcompanion.core.data.workout.exercise_slot.ExerciseSlot
 import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot
@@ -24,6 +30,7 @@ import com.example.workoutcompanion.core.presentation.main_navigations.MainNavig
 import com.example.workoutcompanion.ui.Typography
 import com.example.workoutcompanion.ui.cardShapes
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 
 object WorkoutSessionScreen:MainNavigation.Screens("Workout_Session_Screen") {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -38,8 +45,22 @@ object WorkoutSessionScreen:MainNavigation.Screens("Workout_Session_Screen") {
         val sets by viewModel.setSlots.collectAsState()
 
 
-        BottomSheetScaffold(sheetContent = {} ,
-            sheetPeekHeight = 0.dp ,
+        BottomSheetScaffold(sheetContent = {
+                                   WorkoutPlayer(
+                                       currentSet = viewModel.currentSet ,
+                                       parentExercise =  viewModel.parentExercise,
+                                       nextItem = viewModel.nextItem ,
+                                       currentSetCompletedInQueue = viewModel.currentSetCompletedInQueue ,
+                                       currentSetCompletedForExercise = viewModel.currentSetCompletedForExercise  ,
+                                       totalSetsForParent =  viewModel.totalSetsForParent,
+                                       totalSets =  viewModel.totalSets,
+                                       onNextItem = { viewModel.onNextItem()} ,
+                                       onPrevItem = { viewModel.onPrevItem()} ,
+                                       updateSetStatus = { state , status->
+                                           viewModel.updateStatus(state, status)
+                                       }
+                                   )
+        } ,
             containerColor = MaterialTheme.colorScheme.background) {
             LazyColumn(
                 modifier = Modifier
@@ -73,22 +94,14 @@ object WorkoutSessionScreen:MainNavigation.Screens("Workout_Session_Screen") {
                                     .sortedBy { it.index } ,
                                 currentSet = viewModel.currentSet ,
                                 onNextItem = { viewModel.onNextItem() } ,
-                                onPrevItem = { viewModel.onPrevItem() }
+                                onPrevItem = { viewModel.onPrevItem() } ,
+                                updateSetStatus = { state , status ->
+                                    viewModel.updateStatus(state , status)
+                                },
+                                onSetIsClicked = {
+                                    viewModel.updateCurrentSlot(it)
+                                }
                             )
-                        }
-                    }
-                }
-                if(exerciseSlots.isNotEmpty()){
-                    item {
-                        Row(modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight() , horizontalArrangement = Arrangement.SpaceBetween , verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = { viewModel.onPrevItem() }) {
-                                Icon(imageVector = Icons.Filled.ArrowCircleLeft , contentDescription = null )
-                            }
-                            IconButton(onClick = { viewModel.onNextItem() }) {
-                                Icon(imageVector = Icons.Filled.ArrowCircleRight , contentDescription = null )
-                            }
                         }
                     }
                 }
@@ -110,6 +123,87 @@ object WorkoutSessionScreen:MainNavigation.Screens("Workout_Session_Screen") {
             Text(text = state.exerciseName , style = Typography.labelLarge)
         }
     }
+    private @Composable
+    fun WorkoutPlayer(currentSet : Flow<SetSlot?>,
+                      parentExercise:Flow<String>,
+                      nextItem:Flow<String>,
+                      currentSetCompletedInQueue:Flow<Int>,
+                      currentSetCompletedForExercise:Flow<Int>,
+                      totalSetsForParent:Flow<Int>,
+                      totalSets:Flow<Int>,
+                      onNextItem : () -> Unit ,
+                      onPrevItem : () -> Unit ,
+                      updateSetStatus : (state: SetSlot , status: SetSlot.SetStatus) -> Unit) {
+        val current by currentSet.collectAsState(initial = null)
+        val parentName by parentExercise.collectAsState(initial = "Default")
+        val currentProgress by currentSetCompletedForExercise.collectAsState(initial = 0)
+        val availableSets by totalSetsForParent.collectAsState(initial = 0)
+        val currentPositionInQueue by currentSetCompletedInQueue.collectAsState(initial =0 )
+        val queueSize by totalSets.collectAsState(initial = 0)
+        val next by nextItem.collectAsState(initial = "")
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight().padding(8.dp) ,
+            verticalArrangement = Arrangement.spacedBy(12.dp , Alignment.Top) ,
+            horizontalAlignment = Alignment.Start
+        ) {
+
+            Column() {
+                Text(text = "Overall Progress")
+                Slider(
+                    value = currentPositionInQueue.toFloat() ,
+                    onValueChange = {} ,
+                    enabled = false ,
+                    valueRange = (0.0f..queueSize.toFloat()))
+            }
+            Column() {
+                Column() {
+                    Text(
+                        text = "Current Exercise" ,
+                        style = Typography.labelSmall.copy(
+                            color = MaterialTheme.colorScheme.onBackground.copy(0.25f)
+                        )
+                    )
+                    Text(
+                        text = parentName ,
+                        style = Typography.labelLarge.copy(
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    )
+                }
+                Slider(
+                    value =availableSets.toFloat()- currentProgress.toFloat() ,
+                    onValueChange = {} ,
+                    enabled = false ,
+                    valueRange = (0.0f..availableSets.toFloat()))
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight() ,
+                horizontalArrangement = Arrangement.SpaceBetween ,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { onPrevItem() }) {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowCircleLeft ,
+                        contentDescription = null
+                    )
+                }
+                IconButton(onClick = { onNextItem() }) {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowCircleRight ,
+                        contentDescription = null
+                    )
+                }
+            }
+            Column() {
+                Text(text = "Next")
+                Text(text = next)
+            }
+        }
+    }
 
     private @Composable
     fun SetList(
@@ -117,7 +211,9 @@ object WorkoutSessionScreen:MainNavigation.Screens("Workout_Session_Screen") {
         sets : List<SetSlot> ,
         currentSet : Flow<SetSlot?> ,
         onNextItem : () -> Unit ,
-        onPrevItem : () -> Unit
+        onPrevItem : () -> Unit ,
+        onSetIsClicked : (SetSlot) -> Unit,
+        updateSetStatus : (state : SetSlot , status : SetSlot.SetStatus) -> Unit ,
     ) {
 
         Column(
@@ -134,35 +230,48 @@ object WorkoutSessionScreen:MainNavigation.Screens("Workout_Session_Screen") {
                     currentSet = currentSet ,
                     onNextItem = onNextItem ,
                     onPrevItem = onPrevItem ,
+                    updateSetStatus = updateSetStatus,
+                    onSetIsClicked = onSetIsClicked
                 )
             }
         }
     }
 
-    private @Composable
+    @OptIn(ExperimentalMaterial3Api::class)
+    private
+    @Composable
     fun SetCard(
         modifier : Modifier ,
         state : SetSlot ,
         currentSet : Flow<SetSlot?> ,
         onNextItem : () -> Unit ,
         onPrevItem : () -> Unit ,
+        onSetIsClicked:(SetSlot)->Unit,
+        updateSetStatus : (state : SetSlot , status : SetSlot.SetStatus) -> Unit
     ) {
         val current by currentSet.collectAsState(initial = null)
-        val containerColor =
-            if (state.type == SetSlot.SetType.WarmUp.ordinal) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer
+        val containerColor = MaterialTheme.colorScheme.primaryContainer
+        val scope = rememberCoroutineScope()
         val backgroundColor by animateColorAsState(
-            targetValue = if (current != null && current!!.uid == state.uid) MaterialTheme.colorScheme.tertiaryContainer else containerColor
+            targetValue = if (current != null && current!!.uid == state.uid) MaterialTheme.colorScheme.secondaryContainer else containerColor
         )
-
+        val tooltip = rememberRichTooltipState(isPersistent = true)
         Card(
-            modifier = modifier ,
-            colors = CardDefaults.cardColors(containerColor = backgroundColor)
+            modifier = modifier.clickable { onSetIsClicked(state) } ,
+            border = BorderStroke(
+                2.dp ,
+                if (current != null && current!!.uid == state.uid) MaterialTheme.colorScheme.primary else backgroundColor
+            ) ,
+            colors = CardDefaults.cardColors(
+                containerColor = backgroundColor ,
+                contentColor = MaterialTheme.colorScheme.onBackground
+            )
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(4.dp) ,
-                verticalArrangement = Arrangement.Center ,
+                    .padding(8.dp) ,
+                verticalArrangement = Arrangement.spacedBy(8.dp , Alignment.CenterVertically) ,
                 horizontalAlignment = Alignment.Start
             ) {
                 Row(
@@ -171,65 +280,100 @@ object WorkoutSessionScreen:MainNavigation.Screens("Workout_Session_Screen") {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(
-                        modifier = Modifier
-                            .wrapContentWidth()
-                            .wrapContentHeight() ,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp , Alignment.Start)
+                        modifier = Modifier.wrapContentSize() ,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp , Alignment.Start) ,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(text = "${state.reps} reps " , color = Color.White)
-                        Text(text = "X" , color = Color.White)
-                        Text(
-                            text = String.format("%.1f" , state.weightInKgs) + " Kgs" ,
-                            color = Color.White
-                        )
-                       AnimatedVisibility(state.status == SetSlot.SetStatus.Completed.ordinal){
-                            Icon(imageVector = Icons.Filled.Check , contentDescription = null , tint = getPalette().current.successColor)
-                        }
-                        AnimatedVisibility(state.status == SetSlot.SetStatus.Failed.ordinal){
-                            Icon(imageVector = Icons.Filled.Error , contentDescription = null , tint = getPalette().current.successColor)
-                        }
-
-                    }
-                    AnimatedVisibility(visible = current != null && current!!.uid == state.uid) {
-                        Row(
-                            modifier = Modifier.wrapContentSize() ,
-                            horizontalArrangement = Arrangement.spacedBy(
-                                8.dp ,
-                                Alignment.CenterHorizontally
-                            ) ,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .width(30.dp)
-                                    .height(20.dp)
-                                    .background(
-                                        MaterialTheme.colorScheme.secondaryContainer ,
-                                        shape = cardShapes.small
-                                    ) ,
-                                contentAlignment = Alignment.Center
+                        Text(buildAnnotatedString {
+                            append("${state.reps}")
+                            withStyle(
+                                SpanStyle(
+                                    fontSize = 10.sp ,
+                                    color = MaterialTheme.colorScheme.onBackground.copy(0.5f)
+                                )
                             ) {
-                                Icon(
-                                    imageVector = Icons.Filled.ArrowBack ,
-                                    contentDescription = null ,
-                                    tint = MaterialTheme.colorScheme.onPrimary ,
-                                    modifier = Modifier.clickable { onPrevItem() })
+                                append(" Reps")
                             }
-                            Box(
-                                modifier = Modifier
-                                    .width(30.dp)
-                                    .height(20.dp)
-                                    .background(
-                                        MaterialTheme.colorScheme.secondaryContainer ,
-                                        shape = cardShapes.small
-                                    ) ,
-                                contentAlignment = Alignment.Center
+                        })
+                        Text(text = "X")
+                        Text(buildAnnotatedString {
+                            append(String.format("%.1f" , state.weightInKgs))
+                            withStyle(
+                                SpanStyle(
+                                    fontSize = 10.sp ,
+                                    color = MaterialTheme.colorScheme.onBackground.copy(0.5f)
+                                )
                             ) {
+                                append(" Kgs")
+                            }
+                        })
+                    }
+                    RichTooltipBox(text = { Text(text = "Complete the Set") } , action = {
+                        Row(
+                            modifier = Modifier
+                                .wrapContentWidth()
+                                .wrapContentHeight() ,
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            FilledTonalButton(onClick = {
+                                updateSetStatus(
+                                    state ,
+                                    SetSlot.SetStatus.Failed
+                                )
+                                scope.launch {
+                                    tooltip.dismiss()
+                                }
+                            } ,
+                                modifier = Modifier.weight(1f , true) ,
+                                colors = ButtonDefaults.filledTonalButtonColors()) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close ,
+                                    contentDescription = null ,
+                                    tint = MaterialTheme.colorScheme.errorContainer
+                                )
+                                Text("Failed")
+                            }
+                            FilledTonalButton(onClick = {
+                                updateSetStatus(
+                                    state ,
+                                    SetSlot.SetStatus.Completed
+                                )
+                                scope.launch {
+                                    tooltip.dismiss()
+                                }
+                            } ,
+                                modifier = Modifier.weight(1f , true) ,
+                                colors = ButtonDefaults.filledTonalButtonColors()) {
                                 Icon(
                                     imageVector = Icons.Filled.Check ,
                                     contentDescription = null ,
-                                    tint = MaterialTheme.colorScheme.onPrimary ,
-                                    modifier = Modifier.clickable { onNextItem() })
+                                    tint = getPalette().current.successColor
+                                )
+                                Text("Completed")
+                            }
+                        }
+                    } , tooltipState = tooltip) {
+                        Box(
+                            modifier = Modifier
+                                .width(40.dp)
+                                .height(30.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.secondaryContainer ,
+                                    shape = cardShapes.medium
+                                )
+                                .clickable {
+                                    scope.launch {
+                                        tooltip.show()
+                                    }
+                                } , contentAlignment = Alignment.Center
+                        ) {
+                            if (state.status != SetSlot.SetStatus.Default.ordinal) {
+                                val isFailed = state.status == SetSlot.SetStatus.Failed.ordinal
+                                Icon(
+                                    imageVector = if (isFailed) Icons.Filled.Close else Icons.Filled.Check ,
+                                    contentDescription = null ,
+                                    tint = if (isFailed) MaterialTheme.colorScheme.errorContainer else getPalette().current.successColor
+                                )
                             }
                         }
                     }
