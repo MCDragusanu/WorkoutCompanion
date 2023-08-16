@@ -16,7 +16,6 @@ class CloudProfileRepositoryTestImpl : CloudProfileRepository {
         scope : CoroutineScope
     ) : Result<UserProfile> {
         delay(2000)
-        Log.d("Test" , " CloudProfileRepositoryTestImpl::guest profile has been retrieved")
         return Result.success(guestProfile)
     }
 
@@ -25,13 +24,13 @@ class CloudProfileRepositoryTestImpl : CloudProfileRepository {
         newProfile : UserProfile
     ) : Result<Nothing?> {
         delay(1000)
-        Log.d("Test" , "guest profile has been 'updated' ")
+
         return Result.success(null)
     }
 
     override suspend fun deleteProfile(userUid : String) : Result<Nothing?> {
         delay(1000)
-        Log.d("Test" , "guest profile has been deleted")
+
         return Result.success(null)
     }
 

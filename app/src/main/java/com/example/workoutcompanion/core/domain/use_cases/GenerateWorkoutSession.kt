@@ -16,7 +16,7 @@ class GenerateWorkoutSession {
         val ownerUid = workoutMetadata.ownerUid
         val status = WorkoutSession.Companion.SessionState.STARTED.ordinal
         val slots = WorkoutSession.buildUidString(slotList.map { it.uid })
-        val sets = WorkoutSession.buildUidString(setList.map { it.uid.toLong() })
+        val sets = WorkoutSession.buildUidString(setList.map { it.uid })
         return WorkoutSession(
             uid = uid ,
             workoutUid = workoutMetadata.uid,

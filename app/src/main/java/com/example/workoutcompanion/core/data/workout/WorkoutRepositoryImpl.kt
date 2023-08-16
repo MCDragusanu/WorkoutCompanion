@@ -253,12 +253,9 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
         }
     }
 
-    override suspend fun deleteExerciseSlot(slot : ExerciseSlot) : Result<Nothing?> {
+    override suspend fun deleteExerciseSlot(slot : ExerciseSlot,weekUid:Long) : Result<Nothing?> {
         return try {
-            weekDao.getWeeksForSlotInASCOrder(slot.uid).onEach {
-                setSlotDao.deleteAllSetsForWeek(it.uid)
-                weekDao.deleteWeek(it)
-            }
+            setSlotDao.deleteAllSetsForWeek(weekUid)
             exerciseSlotDao.deleteSlot(slot)
             Result.success(null)
         } catch (e : Exception) {
@@ -484,7 +481,7 @@ class WorkoutRepositoryImpl (private val exerciseSlotDao : ExerciseSlotDao ,
         }
     }
 
-    override suspend fun getSetByUid(uid : Int) : Result<SetSlot> {
+    override suspend fun getSetByUid(uid : Long) : Result<SetSlot> {
         return try {
             Result.success(setSlotDao.getSetByUid(uid))
         } catch (e : Exception) {

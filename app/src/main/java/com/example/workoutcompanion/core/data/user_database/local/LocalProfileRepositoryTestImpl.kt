@@ -37,7 +37,7 @@ class LocalProfileRepositoryTestImpl:LocalProfileRepository {
     ) : Result<Nothing?> {
         return try {
             //dao.addProfile(userProfile = newProfile)
-            Log.d("Test" , "profile has been added with uid= $newProfile")
+
             Result.success(null)
         }catch (e:Exception){
             Result.failure(e)
@@ -52,7 +52,6 @@ class LocalProfileRepositoryTestImpl:LocalProfileRepository {
         return try {
             val user = guestProfile //dao.getProfileByUid(uid)
 
-            Log.d("Test" , "profile has been retrieved from local soruce with uid= ${user.uid}")
             Result.success(user)
 
         }catch (e:Exception){

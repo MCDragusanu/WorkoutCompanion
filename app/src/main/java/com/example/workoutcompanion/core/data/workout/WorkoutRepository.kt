@@ -25,7 +25,7 @@ interface WorkoutRepository {
    suspend fun updateSet(newSet : SetSlot):Result<Nothing?>
    suspend fun removeProgression(week : Week):Result<Nothing?>
    suspend fun getWorkoutByUid(_workoutUid : Long) :Result< WorkoutMetadata?>
-   suspend  fun deleteExerciseSlot(slot : ExerciseSlot):Result<Nothing?>
+   suspend  fun deleteExerciseSlot(slot : ExerciseSlot , weekUid:Long):Result<Nothing?>
    suspend fun updateMetadata(value : WorkoutMetadata):Result<Nothing?>
    suspend  fun removeSet(set : SetSlot):Result<Nothing?>
    suspend fun getTrainingParameters(userUid : String):Result<TrainingParameters?>
@@ -35,7 +35,7 @@ interface WorkoutRepository {
    suspend fun addSession(session : WorkoutSession):Result<Nothing?>
    suspend fun getSession(sessionUid : Long):Result<WorkoutSession?>
    suspend fun getExerciseSlotByUid( uid:Long):Result<ExerciseSlot>
-   suspend fun getSetByUid(uid : Int) :Result<SetSlot>
+   suspend fun getSetByUid(uid : Long) :Result<SetSlot>
    suspend fun updateSession(session : WorkoutSession):Result<Nothing?>
 
     suspend fun getLatestSessionUidForWorkout(_workoutUid : Long) : Result<Long?>

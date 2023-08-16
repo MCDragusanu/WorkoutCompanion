@@ -15,7 +15,7 @@ class RetrieveTrainingParameters {
         progressionSchemaDao : ProgressionSchemaDao
     ) : Result<TrainingParameters?> {
         return try {
-            Log.d("Test" , userUid)
+
             val trainingParametersMetadata = parametersDao.getParametersForUser(userUid)
                 ?: throw NullPointerException("Metadata not found")
             val schemas = progressionSchemaDao.getSchemas(trainingParametersMetadata.uid).map {
@@ -35,11 +35,8 @@ class RetrieveTrainingParameters {
 
                     ).apply {
                     this.uid = it.uid
-                    Log.d("Test" , "Schema uid retrieved = ${it.uid}")
+
                 }
-            }
-            schemas.onEach {
-                Log.d("Test" , it.repRange.toString() + "/" + it.appliedTo)
             }
             val trainingParameters = TrainingParameters(
                 uid = trainingParametersMetadata.uid ,

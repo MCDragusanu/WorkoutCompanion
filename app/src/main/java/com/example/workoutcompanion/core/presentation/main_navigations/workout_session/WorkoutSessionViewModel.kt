@@ -43,7 +43,7 @@ class WorkoutSessionViewModel @Inject constructor(private val workoutRepository 
     private val _setSlots = MutableStateFlow(emptyList<SetSlot>())
     val setSlots = _setSlots.asStateFlow()
 
-    private val setQueueBuffer : MutableList<Int> = mutableListOf()
+    private val setQueueBuffer : MutableList<Long> = mutableListOf()
 
 
 
@@ -123,6 +123,9 @@ class WorkoutSessionViewModel @Inject constructor(private val workoutRepository 
         }
     }
 
+    fun sessionIsValid(uid:Long):Boolean{
+        return (System.currentTimeMillis() - uid < 8 * 3600 * 1000)
+    }
     fun retrieveSession(sessionUid : Long) {
         viewModelScope.launch(Dispatchers.IO) {
             val newSession =
@@ -133,8 +136,10 @@ class WorkoutSessionViewModel @Inject constructor(private val workoutRepository 
                 val slotUids = WorkoutSession.parseUids(session.slotList)
                 val setUids = WorkoutSession.parseUids(session.setList)
 
+                Log.d("Test" , "Session  = $session")
 
                 slotUids.onEach {
+                    Log.d("Test" , "Set uid = ${it}")
                     val newSlot = workoutRepository.getExerciseSlotByUid(it)
                         .onFailure { it.printStackTrace() }.getOrNull()
                     newSlot?.let { slot ->
@@ -144,7 +149,7 @@ class WorkoutSessionViewModel @Inject constructor(private val workoutRepository 
 
                 setUids.onEach {
                     val newSet =
-                        workoutRepository.getSetByUid(it.toInt()).onFailure { it.printStackTrace() }
+                        workoutRepository.getSetByUid(it).onFailure { it.printStackTrace() }
                             .getOrNull()
                     newSet?.let { set ->
                         _setSlots.update { it + set }
@@ -182,7 +187,7 @@ class WorkoutSessionViewModel @Inject constructor(private val workoutRepository 
         _currentSet.update { nextItem }
 
         if(nextItem!=null)
-        updateCursorPosition(nextItem)
+         updateCursorPosition(nextItem)
 
     }
     private fun updateCursorPosition(nextItem : SetSlot) {

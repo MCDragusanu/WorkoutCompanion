@@ -19,7 +19,7 @@ class ProfileRepositoryImpl @Inject constructor(private val cloudRepository : Cl
         userProfile : UserProfile
     ) : Result<Nothing?> {
         return try {
-            Log.d("Test" , "Add profile completed")
+
             localRepository.addProfile(userProfile.uid , userProfile)
             cloudRepository.addProfile(userProfile.uid , userProfile)
             Result.success(null)

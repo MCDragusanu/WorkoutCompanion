@@ -22,10 +22,6 @@ class AppStateManager @Inject constructor(private val workoutRepository : Workou
                                           private val profileRepository : ProfileRepository ,) {
 
 
-
-
-
-
     suspend fun getAppState(userUid : String) : WorkoutCompanionAppState? {
 
         var current : WorkoutCompanionAppState?
@@ -33,16 +29,9 @@ class AppStateManager @Inject constructor(private val workoutRepository : Workou
         val profile =
             profileRepository.getProfileFromLocalSource(userUid).getOrNull() ?: guestProfile
         val trainingParameters =
-            workoutRepository.getTrainingParameters(userUid).onFailure {
-                it.printStackTrace()
-                Log.d("Test" , "Failed to retrieve custom parameters")
-            }.onSuccess {
-                Log.d("Test" , "Retrieved custom parameters")
-            }.getOrNull()
+            workoutRepository.getTrainingParameters(userUid).onFailure { it.printStackTrace() }
+                .getOrNull()
                 ?: workoutRepository.createInitialParameters(userUid).onFailure {
-                    Log.d("Test" , "Failed to create default parameters")
-                }.onSuccess {
-                    Log.d("Test" , "Default parameters created")
                 }.getOrNull()
                 ?: RetrieveTrainingParameters().getDefaultParameters(userUid)
         val weight = UnitOfMeasurement.Kilograms
@@ -59,7 +48,4 @@ class AppStateManager @Inject constructor(private val workoutRepository : Workou
 
         return current
     }
-
-
-
 }

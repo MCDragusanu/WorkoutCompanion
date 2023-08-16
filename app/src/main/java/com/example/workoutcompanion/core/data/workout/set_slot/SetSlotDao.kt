@@ -23,5 +23,5 @@ interface SetSlotDao {
     @Query("UPDATE set_slot_table SET weightInKgs = :weightInKgs, reps = :reps,  `index`= :index WHERE uid = :uid")
     suspend fun updateSetSlot(weightInKgs:Double , reps:Int , index:Int, uid:Int)
     @Query("SELECT * from set_slot_table where uid = :uid")
-    fun getSetByUid(uid : Int) : SetSlot
+    fun getSetByUid(uid : Long) : SetSlot
 }

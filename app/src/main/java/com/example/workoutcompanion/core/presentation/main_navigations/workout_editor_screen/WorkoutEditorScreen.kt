@@ -120,6 +120,7 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                         metadata = metadata ,
                         currentWeek = 1 ,
                         onBackIsPressed = onBackIsPressed ,
+                        sessionStatus = viewModel.btnStartWorkout,
                         onChangeLabelColor = {
                             showColorDialogue = true
                         } ,
@@ -347,6 +348,7 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
         metadata : WorkoutMetadata ,
         expectedLengthInMinutes : Int ,
         currentWeek : Int ,
+        sessionStatus:Flow<Boolean>,
         onBackIsPressed : () -> Unit ,
         onEditWorkoutName : () -> Unit ,
         onChangeDayOfWeek : () -> Unit ,
@@ -512,6 +514,7 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                     }
                 }
                 item {
+                    val isActive by sessionStatus.collectAsState(initial = false)
                     Card(
                         modifier = Modifier
                             .clickable {
@@ -529,7 +532,7 @@ object WorkoutEditorScreen:MainNavigation.Screens("WorkoutScreen") {
                             verticalArrangement = Arrangement.SpaceEvenly ,
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(text = "Start Workout" , style = Typography.labelMedium)
+                            Text(text = if(!isActive)"Start Workout" else "Resume Workout" , style = Typography.labelMedium)
                             Icon(
                                 imageVector = Icons.Filled.PlayCircleFilled ,
                                 contentDescription = null

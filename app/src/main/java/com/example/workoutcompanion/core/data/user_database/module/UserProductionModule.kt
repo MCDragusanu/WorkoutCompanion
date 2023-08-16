@@ -25,14 +25,14 @@ object UserProductionModule {
     @Provides
     @Production
     fun provideUserDatabase(application : Application) : ProductionUserDatabase {
-        //Log.d("Test" , "Provied production User Database")
+
         return ProductionUserDatabase.getInstance(application)
     }
 
     @Provides
     @Production
     fun provideCloudRepository() : CloudProfileRepository {
-        //Log.d("Test" , "Provided production Cloud Profile Repository")
+
         return CloudProfileRepositoryImpl()
     }
 
@@ -40,7 +40,7 @@ object UserProductionModule {
     @Production
     fun provideLocalRepository(application : Application) : LocalProfileRepository {
         provideUserDatabase(application).apply {
-            //Log.d("Test" , "Provided production Local Profile Repository")
+
             return LocalProfileRepositoryImpl(this.dao)
         }
     }

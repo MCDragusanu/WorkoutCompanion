@@ -2,10 +2,14 @@ package com.example.workoutcompanion.core.data.workout.set_slot
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.util.UUID
+import kotlin.math.absoluteValue
 
 
 @Entity("set_slot_table")
 data class SetSlot(
+    @PrimaryKey
+    var uid : Long = UUID.randomUUID().mostSignificantBits.absoluteValue,
     val weightInKgs:Double ,
     val reps:Int ,
     val weekUid:Long ,
@@ -13,12 +17,9 @@ data class SetSlot(
     val type:Int,
     val status:Int,
     val index:Int) {
-    @PrimaryKey(autoGenerate = true)
-    var uid : Int = 0
 
-    companion object {
 
-    }
+
 
     enum class SetType {
         WarmUp ,

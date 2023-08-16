@@ -24,21 +24,21 @@ object UserTestingModule {
     @Provides
     @Testing
     fun provideTestUserDatabase(application : Application) : TestUserDatabase {
-        Log.d("Test" , "Provided testing User Database")
+
         return TestUserDatabase.getInstance(application)
     }
 
     @Provides
     @Testing
     fun provideTestCloudRepository() : CloudProfileRepository {
-        Log.d("Test" , "Provided test Cloud Profile Repository")
+
         return CloudProfileRepositoryTestImpl()
     }
 
     @Provides
     @Testing
     fun provideTestLocalRepository() : LocalProfileRepositoryTestImpl {
-        Log.d("Test" , "Provided test Local Profile Repository")
+
 
             return LocalProfileRepositoryTestImpl()
     }
@@ -46,7 +46,7 @@ object UserTestingModule {
     @Provides
     @Testing
     fun provideProfileRepository() : ProfileRepository {
-        Log.d("Test" , "Provided test Profile Repository")
+
         return ProfileRepositoryImpl(
             this.provideTestCloudRepository() ,
             this.provideTestLocalRepository() ,

@@ -10,9 +10,10 @@ data class WorkoutSession(@PrimaryKey(autoGenerate = false)
                           val ownerUid:String ,
                           val status:Int ,
                           val slotList:String,
-                          val cursorPosition : Int,
+                          val cursorPosition : Long,
                           val setList:String
                           ){
+
 
 
     companion object {

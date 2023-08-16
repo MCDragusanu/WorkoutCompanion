@@ -110,7 +110,7 @@ class ProgressionOverloadManager {
         val dW = (100.0 - startingPercent)/schema.warmUpSetCount
         repeat(schema.warmUpSetCount) {
             val set = SetSlot(
-
+               uid = System.nanoTime().absoluteValue,
                 weightInKgs = roundToMultiple(
                     schema.smallestWeightIncrementAvailable ,
                     week.weightInKgs * (startingPercent*0.01 + it * dW*0.01)
