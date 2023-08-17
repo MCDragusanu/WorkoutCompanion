@@ -238,7 +238,10 @@ object MainNavigation {
                 WorkoutSessionScreen.invoke(
                     viewModel = viewModel ,
                     sessionUid = sessionUid ,
-                    userUid = userUid
+                    userUid = userUid,
+                    onBackIsPressed = {
+                        navController.popBackStack()
+                    }
                 )
             }
         }

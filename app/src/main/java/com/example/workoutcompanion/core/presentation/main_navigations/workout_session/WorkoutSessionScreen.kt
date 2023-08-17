@@ -1,5 +1,6 @@
 package com.example.workoutcompanion.core.presentation.main_navigations.workout_session
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -9,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -23,6 +25,10 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.compose.getPalette
+import com.example.workoutcompanion.common.Resource
+import com.example.workoutcompanion.common.composables.AnimatedPrimaryButton
+import com.example.workoutcompanion.common.composables.AnimatedStatefulCallToAction
+import com.example.workoutcompanion.common.composables.UIState
 import com.example.workoutcompanion.core.data.workout.exercise_slot.ExerciseSlot
 import com.example.workoutcompanion.core.data.workout.set_slot.SetSlot
 
@@ -30,6 +36,7 @@ import com.example.workoutcompanion.core.presentation.main_navigations.MainNavig
 import com.example.workoutcompanion.ui.Typography
 import com.example.workoutcompanion.ui.cardShapes
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 object WorkoutSessionScreen:MainNavigation.Screens("Workout_Session_Screen") {
@@ -37,67 +44,76 @@ object WorkoutSessionScreen:MainNavigation.Screens("Workout_Session_Screen") {
     @Composable
     operator fun invoke(
         viewModel : WorkoutSessionViewModel ,
+        onBackIsPressed : () -> Unit,
         sessionUid : Long ,
         userUid : String
     ) {
 
         val exerciseSlots by viewModel.exerciseSlots.collectAsState()
         val sets by viewModel.setSlots.collectAsState()
+        val isLoading by viewModel.isLoading.collectAsState()
 
+        val lazyListState = rememberLazyListState()
+        val scope = rememberCoroutineScope()
+        var currentIndex by remember { mutableStateOf(0)}
+        val bottomSheetState = rememberBottomSheetScaffoldState()
+        val reports by viewModel.exerciseReports.onEach { if(it.isNotEmpty())bottomSheetState.bottomSheetState.expand() }.collectAsState(
+            emptyList())
+        BottomSheetScaffold( scaffoldState = bottomSheetState, sheetContent = {
+                                                                              SessionReportSnackbar(
+                                                                                  onDismiss = { scope.launch{ bottomSheetState.bottomSheetState.hide() } } ,
+                                                                                  results =reports ,
+                                                                                  onRegress = {
 
-        BottomSheetScaffold(sheetContent = {
-                                   WorkoutPlayer(
-                                       currentSet = viewModel.currentSet ,
-                                       parentExercise =  viewModel.parentExercise,
-                                       nextItem = viewModel.nextItem ,
-                                       currentSetCompletedInQueue = viewModel.currentSetCompletedInQueue ,
-                                       currentSetCompletedForExercise = viewModel.currentSetCompletedForExercise  ,
-                                       totalSetsForParent =  viewModel.totalSetsForParent,
-                                       totalSets =  viewModel.totalSets,
-                                       onNextItem = { viewModel.onNextItem()} ,
-                                       onPrevItem = { viewModel.onPrevItem()} ,
-                                       updateSetStatus = { state , status->
-                                           viewModel.updateStatus(state, status)
-                                       }
-                                   )
-        } ,
+                                                                                  } ,
+                                                                                  onStatusQuo ={
+
+                                                                                  }  ,
+                                                                                  onProgress = {
+
+                                                                                  }
+                                                                              )
+        } , sheetContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+            sheetPeekHeight = 0.dp ,
+            sheetSwipeEnabled = false,
             containerColor = MaterialTheme.colorScheme.background) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(8.dp) ,
-                verticalArrangement = Arrangement.spacedBy(12.dp) ,
-                horizontalAlignment = Alignment.Start
-            ) {
-                item {
-                    Text(text = "Today's Workout" , style = Typography.headlineLarge)
-                }
-                if (exerciseSlots.isNotEmpty()) {
-                    items(exerciseSlots ,/* key = { it.slot.uid }*/) { slot ->
-                        Column(
+            Column() {
+                if (!isLoading) LazyColumn(
+                    state = lazyListState ,
+                    modifier = Modifier
+                        .weight(5f)
+                        .padding(8.dp) ,
+                    verticalArrangement = Arrangement.spacedBy(4.dp) ,
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    item {
+                        WorkoutSessionHeadline(
                             modifier = Modifier
-                                .fillParentMaxWidth()
-                                .wrapContentHeight() ,
-                            horizontalAlignment = Alignment.Start ,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
+                                .fillMaxWidth() ,
+                            onBackIsPressed
+                        )
+                    }
+                    exerciseSlots.onEach { slot ->
+                        item { Spacer(modifier = Modifier.size(8.dp)) }
+                        item {
                             SlotHeadline(
                                 modifier = Modifier
-                                    .fillMaxWidth()
+                                    .fillParentMaxWidth()
                                     .wrapContentHeight() , state = slot
                             )
-                            SetList(
+                        }
+                        item { Spacer(modifier = Modifier.size(8.dp)) }
+                        items(sets.filter { it.exerciseSlotUid == slot.uid }
+                            .sortedBy { it.index } , key = { it.uid }) {
+                            SetCard(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentHeight() ,
-                                sets = sets.filter { it.exerciseSlotUid == slot.uid }
-                                    .sortedBy { it.index } ,
+                                    .fillParentMaxWidth()
+                                    .height(50.dp) ,
+                                state = it ,
                                 currentSet = viewModel.currentSet ,
-                                onNextItem = { viewModel.onNextItem() } ,
-                                onPrevItem = { viewModel.onPrevItem() } ,
                                 updateSetStatus = { state , status ->
                                     viewModel.updateStatus(state , status)
-                                },
+                                } ,
                                 onSetIsClicked = {
                                     viewModel.updateCurrentSlot(it)
                                 }
@@ -105,11 +121,59 @@ object WorkoutSessionScreen:MainNavigation.Screens("Workout_Session_Screen") {
                         }
                     }
                 }
+                if (!isLoading) WorkoutPlayer(
+                    currentSet = viewModel.currentSet ,
+                    parentExercise = viewModel.parentExercise ,
+                    nextItem = viewModel.nextItem ,
+                    workoutIsCompleted = viewModel.workoutIsCompleted ,
+                    btnSaveWorkoutState = viewModel.btnSaveWorkoutState ,
+                    currentSetCompletedForExercise = viewModel.currentSetCompletedForExercise ,
+                    totalSetsForParent = viewModel.totalSetsForParent ,
+                    onNextItem = {
+                        val where = viewModel.onNextItem()
+                        if (where!=null) scope.launch {
+                            lazyListState.animateScrollToItem(
+                                where
+                            )
+                        }
+                    } ,
+                    onPrevItem = {
+                        val where = viewModel.onPrevItem()
+                        if (where!=null) scope.launch {
+                            lazyListState.animateScrollToItem(
+                                where
+                            )
+                        }
+                    } ,
+                    updateSetStatus = { state , status ->
+                        viewModel.updateStatus(state , status)
+                    } ,
+                    onCompleteWorkout = {
+                        viewModel.onCompleteSession()
+                    }
+                )
             }
         }
+
+        var showReportDialogue by remember { mutableStateOf(false)}
         LaunchedEffect(key1 = LocalContext.current) {
             viewModel.retrieveProfile(userUid)
             viewModel.retrieveSession(sessionUid)
+        }
+        LaunchedEffect(key1 = reports){
+            showReportDialogue = true
+           if(reports.isNotEmpty()) bottomSheetState.bottomSheetState.expand()
+        }
+
+    }
+
+    private @Composable
+    fun WorkoutSessionHeadline(modifier : Modifier ,onBackIsPressed:()->Unit) {
+        Column(modifier = modifier , horizontalAlignment = Alignment.Start , verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            IconButton(onClick = onBackIsPressed) {
+                Icon(imageVector = Icons.Filled.ArrowBackIosNew , contentDescription = null)
+            }
+            Text(text = "Current\nWorkout Session" , style = Typography.headlineMedium)
         }
     }
 
@@ -127,80 +191,162 @@ object WorkoutSessionScreen:MainNavigation.Screens("Workout_Session_Screen") {
     fun WorkoutPlayer(currentSet : Flow<SetSlot?>,
                       parentExercise:Flow<String>,
                       nextItem:Flow<String>,
-                      currentSetCompletedInQueue:Flow<Int>,
+                      workoutIsCompleted :Flow<Boolean>,
                       currentSetCompletedForExercise:Flow<Int>,
                       totalSetsForParent:Flow<Int>,
-                      totalSets:Flow<Int>,
+                      btnSaveWorkoutState:Flow<UIState>,
+                      onCompleteWorkout:()->Unit,
                       onNextItem : () -> Unit ,
                       onPrevItem : () -> Unit ,
                       updateSetStatus : (state: SetSlot , status: SetSlot.SetStatus) -> Unit) {
         val current by currentSet.collectAsState(initial = null)
         val parentName by parentExercise.collectAsState(initial = "Default")
-        val currentProgress by currentSetCompletedForExercise.collectAsState(initial = 0)
-        val availableSets by totalSetsForParent.collectAsState(initial = 0)
-        val currentPositionInQueue by currentSetCompletedInQueue.collectAsState(initial =0 )
-        val queueSize by totalSets.collectAsState(initial = 0)
+        val currentProgress by currentSetCompletedForExercise.onEach {
+            Log.d(
+                "Test" ,
+                it.toString()
+            )
+        }.collectAsState(initial = 0)
+        val availableSets by totalSetsForParent.onEach { Log.d("Test" , it.toString()) }
+            .collectAsState(initial = 0)
+
         val next by nextItem.collectAsState(initial = "")
+        val workoutCompleted = workoutIsCompleted.collectAsState(initial = false)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .wrapContentHeight().padding(8.dp) ,
-            verticalArrangement = Arrangement.spacedBy(12.dp , Alignment.Top) ,
+                .wrapContentHeight()
+                .padding(16.dp) ,
+            verticalArrangement = Arrangement.spacedBy(24.dp , Alignment.Top) ,
             horizontalAlignment = Alignment.Start
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .padding(8.dp) ,
+                horizontalAlignment = Alignment.Start ,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Current Exercise" ,
+                    style = Typography.labelSmall.copy(
+                        color = MaterialTheme.colorScheme.onBackground.copy(0.25f)
+                    )
+                )
+                Text(
+                    text = parentName ,
+                    style = Typography.labelLarge.copy(
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                )
+            }
 
-            Column() {
-                Text(text = "Overall Progress")
-                Slider(
-                    value = currentPositionInQueue.toFloat() ,
-                    onValueChange = {} ,
-                    enabled = false ,
-                    valueRange = (0.0f..queueSize.toFloat()))
-            }
-            Column() {
-                Column() {
-                    Text(
-                        text = "Current Exercise" ,
-                        style = Typography.labelSmall.copy(
-                            color = MaterialTheme.colorScheme.onBackground.copy(0.25f)
-                        )
-                    )
-                    Text(
-                        text = parentName ,
-                        style = Typography.labelLarge.copy(
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    )
-                }
-                Slider(
-                    value =availableSets.toFloat()- currentProgress.toFloat() ,
-                    onValueChange = {} ,
-                    enabled = false ,
-                    valueRange = (0.0f..availableSets.toFloat()))
-            }
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .wrapContentHeight() ,
-                horizontalArrangement = Arrangement.SpaceBetween ,
+                    .wrapContentHeight()
+                    .padding(8.dp) ,
+                horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { onPrevItem() }) {
-                    Icon(
-                        imageVector = Icons.Filled.ArrowCircleLeft ,
-                        contentDescription = null
-                    )
+                    Icon(imageVector = Icons.Filled.FastRewind , contentDescription = null)
+                }
+                Surface(shape = cardShapes.medium,
+                    color = MaterialTheme.colorScheme.primaryContainer ,
+                    modifier = Modifier
+                        .width(32.dp)
+                        .height(32.dp)
+                        .clickable {
+                            current?.let {
+                                updateSetStatus(it , SetSlot.SetStatus.Failed)
+                                onNextItem()
+                            }
+                        }) {
+                    Icon(imageVector = Icons.Filled.Close , contentDescription = null , modifier = Modifier.size(16.dp))
+                }
+                Surface(
+                    shape = cardShapes.medium,
+                    color = MaterialTheme.colorScheme.primaryContainer ,
+                    modifier = Modifier
+                        .width(32.dp)
+                        .height(32.dp)
+                        .clickable {
+                            current?.let {
+                                updateSetStatus(it , SetSlot.SetStatus.Completed)
+                                onNextItem()
+                            }
+                        }) {
+
+
+                    Icon(imageVector = Icons.Filled.Check , contentDescription = null,modifier = Modifier.size(16.dp))
+
                 }
                 IconButton(onClick = { onNextItem() }) {
-                    Icon(
-                        imageVector = Icons.Filled.ArrowCircleRight ,
-                        contentDescription = null
-                    )
+                    Icon(imageVector = Icons.Filled.FastForward , contentDescription = null)
                 }
             }
-            Column() {
-                Text(text = "Next")
-                Text(text = next)
+
+
+            AnimatedVisibility(visible = !workoutCompleted.value) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight() ,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = "Next")
+                    Text(text = next ,)
+                }
+            }
+            AnimatedVisibility(visible = workoutCompleted.value) {
+                AnimatedStatefulCallToAction(
+                    ctaState = btnSaveWorkoutState ,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp) ,
+                    action = onCompleteWorkout
+                ) { state , container , content ->
+                    when (state) {
+                        UIState.Loading -> {
+                            LinearProgressIndicator()
+                        }
+                        UIState.Enabled -> {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(50.dp) ,
+                                verticalAlignment = Alignment.CenterVertically ,
+                                horizontalArrangement = Arrangement.Center
+                            ) { Text(text = "Save Session") }
+                        }
+                        UIState.Error -> {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(50.dp) ,
+                                verticalAlignment = Alignment.CenterVertically ,
+                                horizontalArrangement = Arrangement.Center
+                            ) { Text(text = "Not All Sets are tracked") }
+                        }
+                        UIState.Completed -> {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(50.dp) ,
+                                verticalAlignment = Alignment.CenterVertically ,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(text = "Session Saved")
+                            }
+                        }
+                        else -> {
+
+                        }
+                    }
+                }
             }
         }
     }
@@ -228,8 +374,6 @@ object WorkoutSessionScreen:MainNavigation.Screens("Workout_Session_Screen") {
                         .height(40.dp) ,
                     state = it ,
                     currentSet = currentSet ,
-                    onNextItem = onNextItem ,
-                    onPrevItem = onPrevItem ,
                     updateSetStatus = updateSetStatus,
                     onSetIsClicked = onSetIsClicked
                 )
@@ -244,8 +388,7 @@ object WorkoutSessionScreen:MainNavigation.Screens("Workout_Session_Screen") {
         modifier : Modifier ,
         state : SetSlot ,
         currentSet : Flow<SetSlot?> ,
-        onNextItem : () -> Unit ,
-        onPrevItem : () -> Unit ,
+
         onSetIsClicked:(SetSlot)->Unit,
         updateSetStatus : (state : SetSlot , status : SetSlot.SetStatus) -> Unit
     ) {
